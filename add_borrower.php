@@ -28,11 +28,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $date->modify("+$no_rental days"); // Add the number of rental months to the date
     $due_date = $date->format('Y-m-d'); // Convert back to string
 
+    $interest = $agree_value - $amount;
+    $interest_day = $interest/$no_rental;
+
     // Insert data into the borrowers table
-    $sql = "INSERT INTO borrowers (name, amount, rental, agree_value, lone_date, no_rental, due_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO borrowers (name, amount, rental, agree_value,interest,interest_day, lone_date, no_rental, due_date) 
+            VALUES (?, ?, ?, ?,?, ?,?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sdsssss", $name, $amount, $rental, $agree_value, $lone_date, $no_rental, $due_date);
+    $stmt->bind_param("sdsssssss", $name, $amount, $rental, $agree_value,$interest,$interest_day, $lone_date, $no_rental, $due_date);
 
     if ($stmt->execute()) {
         echo "<script>";
