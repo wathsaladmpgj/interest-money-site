@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital Saving and New Loan Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div style="width: 75%; margin: auto;">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+        // Get the chart context
+        const ctx = document.getElementById('myChart').getContext('2d');
+
+        // Define the chart
+        const myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Oct-2023','','','Jan-2024','','', 'Apr-2024', 'Jul-2024', 'Oct-2024'], // X-axis labels (Months)
+                datasets: [
+                    {
+                        label: 'Capital Saving',
+                        data: [500000,550000, 400000, 600000, 450000, 300000], // Sample data for Capital Saving
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'New Loan',
+                        data: [300000, 350000, 400000, 700000, 1000000], // Sample data for New Loan
+                        borderColor: 'magenta',
+                        backgroundColor: 'rgba(255, 0, 255, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'Stocks',
+                        data: [600000, 650000, 800000, 1200000, 1500000], // Sample data for Stocks
+                        borderColor: 'yellow',
+                        backgroundColor: 'rgba(255, 255, 0, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false, // y-axis does not start at 0
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('en-US', { style: 'currency', currency: 'LKR' });
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
