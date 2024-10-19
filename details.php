@@ -57,6 +57,7 @@ function fetch_payments($conn, $borrower_id) {
     $stmt->execute();
     $result = $stmt->get_result();
     $paid_dates = [];
+    $total_payment =0;
 
     while ($row = $result->fetch_assoc()) {
         $paid_dates[] = [
@@ -64,15 +65,17 @@ function fetch_payments($conn, $borrower_id) {
             'rental_amount' => $row['rental_amount'],
             'payment_date' => $row['payment_date']
         ];
+        // Add rental amount to total payment
+        $total_payment += $row['rental_amount'];
     }
 
     
 
     $stmt->close();
-    return $paid_dates;
+    return [$paid_dates, $total_payment];
 }
 
-$paid_dates = fetch_payments($conn, $borrower_id);
+list($paid_dates, $total_payment) = fetch_payments($conn, $borrower_id);
 
 // Get loan date and due date
 $loan_date = new DateTime($borrower['lone_date']);
@@ -97,6 +100,18 @@ for ($i = 1; $i <= $days_difference; $i++) {
 function payment_made($date, $paid_dates) {
     return in_array($date->format('Y-m-d'), array_column($paid_dates, 'du_date'));
 }
+
+// Calculate arrears
+$expected_payment_by_today = 0;
+$arrears = 0;
+
+foreach ($calendar_dates as $date) {
+    if ($date <= $yesterday) {
+        $expected_payment_by_today += $borrower['rental'];
+    }
+}
+
+$arrears = $expected_payment_by_today-$total_payment;
 $row_number = 1; // Initialize counter
 
 //$day_interest = $borrower['interest_day'];
@@ -123,8 +138,8 @@ $row_number = 1; // Initialize counter
     <p><strong>Loan Date:</strong> <?php echo htmlspecialchars($borrower['lone_date']); ?></p>
     <p><strong>No of Rentals:</strong> <?php echo htmlspecialchars($borrower['no_rental']); ?></p>
     <p><strong>Due Date:</strong> <?php echo htmlspecialchars($borrower['due_date']); ?></p>
-    <p><strong>Total Payment:</strong> Rs.<!-- Total payment calculation here --></p>
-    <p><strong>Arrears:</strong> Rs.<!-- Arrears calculation here --></p>
+    <p><strong>Total Payment:</strong>Rs.<?php echo number_format($total_payment, 2); ?></p>
+    <p><strong>Arrears:</strong> Rs.<?php echo number_format($arrears, 2); ?></p>
     <p><strong>Closing Date:</strong><!-- Closing date if applicable --></p>
 
     <h2>Add Payment Details</h2>
