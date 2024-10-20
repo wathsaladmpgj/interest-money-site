@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Collect Amount</title>
+    <link rel="stylesheet" href="./collectAmount.css">
 </head>
 <body>
-    <h1>Collect Amount</h1>
     <h2>Add Payment Details</h2>
     
     <form action="" method="post">

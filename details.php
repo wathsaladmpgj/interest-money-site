@@ -126,7 +126,8 @@ $row_number = 1; // Initialize counter
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrower Details</title>
-    <link rel="stylesheet" href="./details.css">
+    
+    <link rel="stylesheet" href="./detail.css">
 </head>
 <body id="body">
     <h1>Details for <?php echo htmlspecialchars($borrower['name']); ?></h1>
@@ -253,41 +254,39 @@ $row_number = 1; // Initialize counter
                 echo htmlspecialchars($payment);
             ?>
             </td>
-        <!-- Balance, Capital, Interest calculations here -->
-        <td>
-   <?php
-       // Start with the agreed value as the initial balance
-       static $balance = null;
+            <!-- Balance, Capital, Interest calculations here -->
+            <td>
+            <?php
+            // Start with the agreed value as the initial balance
+            static $balance = null;
 
-       // If this is the first due date, initialize the balance to the agreed value
-       if (is_null($balance)) {
-           $balance = $borrower['agree_value'];
-       }
+            // If this is the first due date, initialize the balance to the agreed value
+                if (is_null($balance)) {
+                    $balance = $borrower['agree_value'];
+                }
 
-       // Check if payment is made on the current date
-       if (payment_made($date, $paid_dates)) {
-           foreach ($paid_dates as $paid) {
-               if ($paid['du_date'] == $date->format('Y-m-d')) {
-                   // Deduct the payment amount from the balance
-                   $balance -= $paid['rental_amount'];
-               }
-           }
-       } elseif ($date <= $yesterday) {
-           // For past due dates where no payment has been made, the balance remains as it is
-           $balance = $balance;
-       } else {
-           // For future dates, we don't show the balance yet
-           $balance = '';
-       }
+            // Check if payment is made on the current date
+                if (payment_made($date, $paid_dates)) {
+                    foreach ($paid_dates as $paid) {
+                        if ($paid['du_date'] == $date->format('Y-m-d')) {
+                        // Deduct the payment amount from the balance
+                            $balance -= $paid['rental_amount'];
+                        }
+                    }
+                } 
+                elseif ($date <= $yesterday) {
+                // For past due dates where no payment has been made, the balance remains as it is
+                    $balance = $balance;
+                } 
+                else {
+                // For future dates, we don't show the balance yet
+                    $balance = '';
+                }
 
-       // Display the current balance for the given date
-       echo htmlspecialchars($balance);
-   ?>
-</td>
-
-
-                
-
+            // Display the current balance for the given date
+                echo htmlspecialchars($balance);
+            ?>
+            </td>
 
             <td>
             <?php

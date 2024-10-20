@@ -1,0 +1,117 @@
+/* General body styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: aliceblue;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #333;
+    flex-direction: column;
+}
+
+/* Style for the form container */
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+    margin: 20px;
+}
+
+/* Heading styles */
+h1, h2 {
+    text-align: center;
+    color: #070675;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Label styles */
+label {
+    font-weight: bold;
+    color: #070675;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Input styles */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #070675;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 16px;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Add focus effect to inputs */
+input:focus, select:focus {
+    border-color: #070675;
+    outline: none;
+}
+
+/* Styles for the submit button */
+input[type="submit"] {
+    background-color: #070675;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    width: 100%;
+    transition: background-color 0.3s ease-in-out;
+    margin-bottom: 10px;
+}
+
+/* Back button styling */
+button[type="button"] {
+    background-color: #ccc;
+    color: #333;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    width: 100%;
+    transition: background-color 0.3s ease-in-out;
+}
+
+/* Hover effect for buttons */
+input[type="submit"]:hover {
+    background-color: #070675;
+}
+
+button[type="button"]:hover {
+    background-color: #bbb;
+}
+
+/* Styling select dropdown */
+select {
+    background-color: #fff;
+    cursor: pointer;
+}
+
+/* Additional container styles to center form */
+.container {
+    max-width: 600px;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Add a bit of spacing around the form */
+form {
+    margin-top: 30px;
+}

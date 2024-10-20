@@ -31,6 +31,7 @@ if (isset($_POST['submit'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Payments by Date</title>
+    <link rel="stylesheet" href="./today.css">
 </head>
 <body>
 

@@ -55,6 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Borrower</title>
+    <link rel="stylesheet" href="./add_borrow.css">
 </head>
 <body>
     <h1>Add New Borrower</h1>

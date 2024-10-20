@@ -1,0 +1,84 @@
+/* Style for the entire page */
+body {
+    font-family: Arial, sans-serif;
+    background-color: aliceblue;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Container for the form */
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+
+/* Style for the heading */
+h1 {
+    text-align: center;
+    color: #070675;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Style for the labels and inputs */
+label {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 16px;
+    transition: border-color 0.3s ease-in-out;
+}
+
+/* Change border color on focus */
+input:focus {
+    border-color: #070675;
+    outline: none;
+}
+
+/* Style for the submit button */
+input[type="submit"] {
+    background-color: #070675;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    width: 100%;
+    transition: background-color 0.3s ease-in-out;
+}
+
+/* Change button color on hover */
+input[type="submit"]:hover {
+    background-color: #070675;
+}
+
+/* Adding a subtle effect on form input */
+input[type="text"],
+input[type="number"],
+input[type="date"] {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
