@@ -27,6 +27,7 @@ $result = $conn->query($sql);
 </head>
 <body>
     <h1>Borrowers</h1>
+    <h2>NEW BORROWERS</h2>
     <ul>
     <?php
 // Connect to the database
@@ -50,13 +51,15 @@ if ($result->num_rows > 0) {
         // Check if due_date is today or later
         if ($due_date >= date('Y-m-d')) {
             if (!$new_borrowers_exist) {
-                echo "<h2>New Borrows</h2><ul>";
                 $new_borrowers_exist = true;
             }
             echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "' data-id='" . $row['id'] . "'>" . $row['name'] . "</a></li>";
         }
     }
-
+?></ul>
+<h2>OLD BORROWERS</h2>
+<ul>
+<?php
     // Display old borrowers (with due_date before today)
     $result->data_seek(0); // Reset result pointer to fetch the rows again
     while ($row = $result->fetch_assoc()) {
@@ -65,7 +68,6 @@ if ($result->num_rows > 0) {
         // Check if due_date is before today
         if ($due_date < date('Y-m-d')) {
             if (!$old_borrowers_exist) {
-                echo "</ul><h2>Old Borrows</h2><ul>";
                 $old_borrowers_exist = true;
             }
             echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "' data-id='" . $row['id'] . "'>" . $row['name'] . "</a></li>";;
