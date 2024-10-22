@@ -12,6 +12,8 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+date_default_timezone_set('Asia/Colombo'); // Set timezone
+
 // Initialize variables to store total values
 $totalInvest = 0;
 $agreeValue = 0;
@@ -21,7 +23,7 @@ $allRental = 0;
 $capital = 0;
 $allpayed = 0;
 $dyInterest = 0;
-$allInvest= 0; // Initialize variable to accumulate daily interest
+$allInvest = 0; // Initialize total investment
 
 // Fetch all borrowers from the database
 $sql = "SELECT * FROM borrowers";
@@ -30,16 +32,19 @@ $result = $conn->query($sql);
 // Check if there are any results
 if ($result && $result->num_rows > 0) {
     while ($borrower = $result->fetch_assoc()) {
-
         $allInvest += $borrower['amount'];
+
         // Compare due date with today's date
-        $today = date('Y-m-d');
-        if ($borrower['due_date'] >= $today) {
-            $totalInvest += $borrower['amount']; // Sum total investment
-            $agreeValue += $borrower['agree_value']; // Sum agree value
-            $totalInterest += $borrower['interest']; // Sum total interest
-            $dailyInterest += $borrower['interest_day']; // Sum daily interest
-            $allRental += $borrower['rental']; // Sum total rental
+        $loan_date = new DateTime($borrower['lone_date']);
+        $due_date = new DateTime($borrower['due_date']);
+        $today = new DateTime();
+
+        if ($due_date >= $today) {
+            $totalInvest += $borrower['amount'];
+            $agreeValue += $borrower['agree_value'];
+            $totalInterest += $borrower['interest'];
+            $dailyInterest += $borrower['interest_day'];
+            $allRental += $borrower['rental'];
 
             // Fetch payments for the current borrower
             $sqlPayments = "SELECT * FROM payments WHERE borrower_id = " . $borrower['id'];
@@ -47,21 +52,26 @@ if ($result && $result->num_rows > 0) {
 
             if ($resultPayments && $resultPayments->num_rows > 0) {
                 while ($payment = $resultPayments->fetch_assoc()) {
-                    $allpayed += $payment['rental_amount']; // Sum up the total payments made
+                    $allpayed += $payment['rental_amount'];
 
                     // Calculate daily interest
-                    $dy_interest = $borrower['interest'] / $borrower['no_rental']; // Per-rental interest
-                    $capital += ($borrower['rental'] - $dy_interest); // Capital is rental minus per-rental interest
+                    $dy_interest = $borrower['interest'] / $borrower['no_rental'];
+                    $capital += ($borrower['rental'] - $dy_interest);
 
                     // Check if payment is made today
                     if ($payment['payment_date'] == date('Y-m-d')) {
-                        // Accumulate today's capital contribution
                         $dyInterest += ($payment['rental_amount'] - $borrower['rental'] + $borrower['interest_day']);
                     }
                 }
             }
-        }else{
-            
+        } else {
+            // Borrower is overdue, calculate arrears
+            $expected_payment = $borrower['rental'];
+            $arrears_per_day = $expected_payment; // Assuming arrears are the rental amount
+
+            // Total arrears for overdue days
+            $days_overdue = $today->diff($due_date)->days;
+            $total_arrears = $days_overdue * $arrears_per_day;
         }
     }
 }
@@ -93,17 +103,17 @@ $conn->close();
                 </ul>
             </nav>
         </div>
-        
+
         <!-- Create chart -->
         <div class="chart-temp">
             <div class="card1">
                 <div class="card1-2">
                     <h4>CURRENT STOCK</h4>
-                    <h3>Rs. <?php echo number_format($agreeValue - $allpayed, 2); ?></h3> <!-- Agree value minus payments made -->
+                    <h3>Rs. <?php echo number_format($agreeValue - $allpayed+, 2); ?></h3> <!-- Agree value minus payments made -->
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE CAPITAL</h4>
-                    <h3>Rs. <?php echo number_format($totalInvest - $capital, 2); ?></h3> <!-- Total investment minus capital -->
+                    <h3>Rs. <?php echo number_format($totalInvest - $capital+$total_arrears, 2); ?></h3> <!-- Total investment minus capital -->
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE INTEREST</h4>
@@ -112,7 +122,7 @@ $conn->close();
                 <div class="card1-2">
                     <h4>DAILY INTEREST</h4>
                     <h3>Rs. <?php echo number_format($dyInterest, 2); ?></h3> <!-- Daily interest -->
-                </div>        
+                </div>
             </div>
         </div>
 
