@@ -108,12 +108,13 @@ $arrears = 0;
 foreach ($calendar_dates as $date) {
     if ($date <= $yesterday) {
         $expected_payment_by_today += $borrower['rental'];
+        $arrears = $expected_payment_by_today-$total_payment;
+
     }
 }
 
-$arrears = $expected_payment_by_today-$total_payment;
-$row_number = 1; // Initialize counter
-
+ // Initialize counter
+ $row_number = 1;
 //$day_interest = $borrower['interest_day'];
 //$capital = $borrower['rental'] - $borrower['interest_day'];
 
@@ -170,6 +171,8 @@ $row_number = 1; // Initialize counter
             <th>Balance</th>
             <th>Capital</th>
             <th>Interest</th>
+            <th>Arrears</th>
+            <th>Total Arrears</th>
         </tr>
         <?php foreach ($calendar_dates as $date): ?>
         <tr class="<?php
@@ -254,6 +257,7 @@ $row_number = 1; // Initialize counter
                 echo htmlspecialchars($payment);
             ?>
             </td>
+
             <!-- Balance, Capital, Interest calculations here -->
             <td>
             <?php
@@ -269,7 +273,6 @@ $row_number = 1; // Initialize counter
                 if (payment_made($date, $paid_dates)) {
                     foreach ($paid_dates as $paid) {
                         if ($paid['du_date'] == $date->format('Y-m-d')) {
-                        // Deduct the payment amount from the balance
                             $balance -= $paid['rental_amount'];
                         }
                     }
@@ -294,10 +297,10 @@ $row_number = 1; // Initialize counter
                 if (payment_made($date, $paid_dates)) {
                     foreach ($paid_dates as $paid) {
                         if ($paid['du_date'] == $date->format('Y-m-d')) {
-                            if($cap<=$paid['rental_amount']){
-                                $capital_C = round($cap,2);
+                            if($bar_rent<=$paid['rental_amount']){
+                                $capital_C = round($paid['rental_amount']-$dy_interest,2);
                             }else{
-                                $capital_C = round($paid['rental_amount'],2);
+                                $capital_C = round($paid['rental_amount']-$dy_interest,2);
                             }
                             break;
                         }
@@ -320,10 +323,10 @@ $row_number = 1; // Initialize counter
                 if (payment_made($date, $paid_dates)) {
                     foreach ($paid_dates as $paid){
                     if ($paid['du_date'] == $date->format('Y-m-d')) {
-                        if($cap<=$paid['rental_amount']){
-                            $interest = round($paid['rental_amount']-$cap,2);
+                        if($bar_rent<=$paid['rental_amount']){
+                            $interest = round($dy_interest,2);
                         }else{
-                            $interest = "0.00";
+                            $interest = round($dy_interest,2);
                         }
                         break;
                     }
@@ -338,6 +341,52 @@ $row_number = 1; // Initialize counter
                 echo htmlspecialchars($interest);
             ?>
             </td>
+
+            <td>
+<?php
+    $arrears_per_day = '';
+    if ($date <= $yesterday) {
+        // Calculate expected payment by this date (assuming rental due daily or some interval)
+        $expected_payment = $borrower['rental'];
+
+        // Calculate the arrears for this day
+        if (payment_made($date, $paid_dates)) {
+            foreach ($paid_dates as $paid) {
+                if ($paid['du_date'] == $date->format('Y-m-d')) {
+                    $arrears_per_day = $expected_payment - $paid['rental_amount'];
+                    break;
+                }
+            }
+        } else {
+            // If no payment is made on this date, arrears equal to the rental amount
+            $arrears_per_day = $expected_payment;
+        }
+    } else {
+        // No arrears for future dates
+        $arrears_per_day = '';
+    }
+
+    echo htmlspecialchars($arrears_per_day, 2);
+?>
+</td>
+
+<td>
+<?php
+    static $total_arrears = 0; // Initialize static variable to keep running total of arrears
+
+    // Calculate total arrears by summing up arrears for each overdue day
+    if ($date <= $yesterday) {
+        if ($arrears_per_day !== '') {
+            $total_arrears += $arrears_per_day;
+        }
+    } else {
+        $total_arrears = ''; // No total arrears for future dates
+    }
+
+    echo htmlspecialchars($total_arrears, 2);
+?>
+</td>
+
 
 
         </tr>

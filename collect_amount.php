@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($stmt->execute()) {
         // Redirect to the previous page after successful insertion
-        echo "<script>alert('Payment added successfully!'); window.location.href='home.html';</script>"; // Adjust this line if needed
+        echo "<script>alert('Payment added successfully!');</script>"; // Adjust this line if needed
         exit(); // Ensure no further code is executed after redirection
     } else {
         // Use alert box for errors

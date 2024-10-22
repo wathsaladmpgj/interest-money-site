@@ -1,13 +1,14 @@
 <?php
-// Establish a connection to your MySQL database
-$servername = "localhost";
-$username = "root"; // adjust if needed
-$password = ""; // adjust if needed
-$dbname = "interest"; // your database name
 
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "interest";
+
+// Create a new database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check the connection
+// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -15,14 +16,22 @@ if ($conn->connect_error) {
 if (isset($_POST['submit'])) {
     $selected_date = $_POST['payment_date'];
 
-    // Query to get payments on the selected date and join it with borrowers to get the name
+    // Query to get payments made on the selected date and their borrower names
     $sql = "SELECT payments.rental_amount, payments.payment_date, borrowers.name 
             FROM payments
             INNER JOIN borrowers ON payments.borrower_id = borrowers.id
             WHERE payments.payment_date = '$selected_date'";
     
     $result = $conn->query($sql);
+
+    // Query to get borrowers who haven't made payments on the selected date (those whose due date is today or in the future)
+    $sq = "SELECT name, rental 
+           FROM borrowers 
+           WHERE id NOT IN (SELECT borrower_id FROM payments WHERE payment_date = '$selected_date')
+           AND due_date >= CURDATE()";
+    $resul = $conn->query($sq);
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -46,6 +55,7 @@ if (isset($_POST['submit'])) {
 
     <!-- Display the results if any -->
     <?php
+    // Show payments made on the selected date
     if (isset($result) && $result->num_rows > 0) {
         echo "<h2>Payments on " . $selected_date . ":</h2>";
         echo "<table border='1'>
@@ -55,7 +65,6 @@ if (isset($_POST['submit'])) {
                     <th>Payment Date</th>
                 </tr>";
 
-        // Fetch and display each row
         while($row = $result->fetch_assoc()) {
             echo "<tr>
                     <td>" . $row['name'] . "</td>
@@ -64,8 +73,26 @@ if (isset($_POST['submit'])) {
                 </tr>";
         }
         echo "</table>";
-    } elseif (isset($_POST['submit'])) {
+    } else {
         echo "<p>No payments found for the selected date.</p>";
+    }
+
+    // Show borrowers who have not made payments on the selected date
+    if (isset($resul) && $resul->num_rows > 0) {
+        echo "<h2>Borrowers with no payments on " . $selected_date . ":</h2>";
+        echo "<table border='1'>
+                <tr>
+                    <th>Borrower Name</th>
+                    <th>Rental</th>
+                </tr>";
+
+        while($row = $resul->fetch_assoc()) {
+            echo "<tr>
+                    <td>" . $row['name'] . "</td>
+                    <td>" . $row['rental'] . "</td>
+                </tr>";
+        }
+        echo "</table>";
     }
     ?>
 

@@ -50,6 +50,7 @@ form {
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
+    width: 26%;
 }
 
 form label {
@@ -60,7 +61,7 @@ form label {
 form input[type="text"],
 form input[type="number"],
 form input[type="date"] {
-    width: 100%;
+    width:100%;
     padding: 10px;
     margin-bottom: 15px;
     border: 1px solid #ddd;

@@ -29,6 +29,7 @@ html,body{
     width: 0.5fr;
     background-color: #ffffff;
     border-radius: 10px;
+    padding-left: 5%;
 }
 nav ul{
     color: #ffffff;
