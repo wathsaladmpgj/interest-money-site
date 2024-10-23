@@ -17,7 +17,7 @@ if (isset($_POST['submit'])) {
     $selected_date = $_POST['payment_date'];
 
     // Query to get payments made on the selected date and their borrower names
-    $sql = "SELECT payments.rental_amount, payments.payment_date, borrowers.name 
+    $sql = "SELECT payments.rental_amount, payments.payment_date,payments.du_date, borrowers.name 
             FROM payments
             INNER JOIN borrowers ON payments.borrower_id = borrowers.id
             WHERE payments.payment_date = '$selected_date'";
@@ -62,6 +62,7 @@ if (isset($_POST['submit'])) {
                 <tr>
                     <th>Borrower Name</th>
                     <th>Rental Amount</th>
+                    <th>Due date</th>
                     <th>Payment Date</th>
                 </tr>";
 
@@ -69,6 +70,7 @@ if (isset($_POST['submit'])) {
             echo "<tr>
                     <td>" . $row['name'] . "</td>
                     <td>" . $row['rental_amount'] . "</td>
+                    <td>" .$row['du_date']."</td>
                     <td>" . $row['payment_date'] . "</td>
                 </tr>";
         }
