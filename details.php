@@ -58,16 +58,28 @@ function fetch_payments($conn, $borrower_id) {
     $result = $stmt->get_result();
     $paid_dates = [];
     $total_payment =0;
+    $ren_amo = 0;
 
-    while ($row = $result->fetch_assoc()) {
-        $paid_dates[] = [
-            'du_date' => $row['du_date'], 
-            'rental_amount' => $row['rental_amount'],
-            'payment_date' => $row['payment_date']
-        ];
-        // Add rental amount to total payment
+
+$today = new DateTime();
+$yesterday = clone $today;
+$yesterday->modify('-1 day');
+
+while ($row = $result->fetch_assoc()) {
+    $paid_dates[] = [
+        'du_date' => $row['du_date'], 
+        'rental_amount' => $row['rental_amount'],
+        'payment_date' => $row['payment_date']
+    ];
+    
+    // Parse the 'du_date' as a DateTime object for comparison
+    $payment_due_date = new DateTime($row['du_date']);
+    
+    if ($yesterday >= $payment_due_date) {
         $total_payment += $row['rental_amount'];
     }
+}
+
 
     
 
@@ -106,19 +118,32 @@ $expected_payment_by_today = 0;
 $arrears = 0;
 
 foreach ($calendar_dates as $date) {
-    if ($date <= $yesterday) {
+    if ($date<=$yesterday) { 
         $expected_payment_by_today += $borrower['rental'];
         $arrears = $expected_payment_by_today-$total_payment;
 
     }
 }
 
+// After calculating $total_arrears
+$total_arrears = round($arrears, 2); // Ensure it's rounded to 2 decimal places
+
+// Update the total arrears in the borrowers table
+$update_arrears_sql = "UPDATE borrowers SET total_arrears = ? WHERE id = ?";
+$update_arrears_stmt = $conn->prepare($update_arrears_sql);
+$update_arrears_stmt->bind_param("di", $total_arrears, $borrower_id);
+
+if ($update_arrears_stmt->execute()) {
+    echo "<script>console.log('Total arrears updated successfully!');</script>";
+} else {
+    echo "Error updating arrears: " . $conn->error;
+}
+
+$update_arrears_stmt->close();
+
+
  // Initialize counter
  $row_number = 1;
-//$day_interest = $borrower['interest_day'];
-//$capital = $borrower['rental'] - $borrower['interest_day'];
-
-
 ?>
 
 <!DOCTYPE html>
@@ -183,7 +208,7 @@ foreach ($calendar_dates as $date) {
             } else {
                 echo 'future';
             }
-        ?>">
+            ?>">
             <td><?php echo $row_number++; // Display and increment row number ?></td>
 
             <td><?php echo $date->format('Y-m-d'); ?></td>
@@ -198,7 +223,7 @@ foreach ($calendar_dates as $date) {
             }
             ?></td>
             
-        <!--PAYMENT Date-->
+            <!--PAYMENT Date-->
             <td>
             <?php
                 $payment_date = '';
@@ -217,7 +242,7 @@ foreach ($calendar_dates as $date) {
             ?>
             </td>
 
-        <!--Rental coloum-->
+            <!--Rental coloum-->
             <td>
             <?php
                $rental = '';
@@ -229,7 +254,7 @@ foreach ($calendar_dates as $date) {
                     }
                 } 
                 elseif ($date <= $yesterday) {
-                    $rental = '0.00';
+                    $rental = $borrower['rental'];
                 } 
                 else {
                     $rental = '';
@@ -316,7 +341,7 @@ foreach ($calendar_dates as $date) {
             ?>
             </td>
 
-        <!--Interest for DAY-->
+            <!--Interest for DAY-->
             <td>
             <?php
                 $interest = '';
@@ -343,52 +368,48 @@ foreach ($calendar_dates as $date) {
             </td>
 
             <td>
-<?php
-    $arrears_per_day = '';
-    if ($date <= $yesterday) {
-        // Calculate expected payment by this date (assuming rental due daily or some interval)
-        $expected_payment = $borrower['rental'];
+            <?php
+                $arrears_per_day = '';
+                if ($date <= $yesterday) {
+                // Calculate expected payment by this date (assuming rental due daily or some interval)
+                $expected_payment = $borrower['rental'];
 
-        // Calculate the arrears for this day
-        if (payment_made($date, $paid_dates)) {
-            foreach ($paid_dates as $paid) {
-                if ($paid['du_date'] == $date->format('Y-m-d')) {
-                    $arrears_per_day = $expected_payment - $paid['rental_amount'];
-                    break;
+                // Calculate the arrears for this day
+                    if (payment_made($date, $paid_dates)) {
+                        foreach ($paid_dates as $paid) {
+                            if ($paid['du_date'] == $date->format('Y-m-d')) {
+                                $arrears_per_day = $expected_payment - $paid['rental_amount'];
+                                break;
+                            }
+                        }
+                    } else {
+                        $arrears_per_day = $expected_payment;
+                    }
+                } else {
+                    // No arrears for future dates
+                     $arrears_per_day = '';
                 }
-            }
-        } else {
-            // If no payment is made on this date, arrears equal to the rental amount
-            $arrears_per_day = $expected_payment;
-        }
-    } else {
-        // No arrears for future dates
-        $arrears_per_day = '';
-    }
 
-    echo htmlspecialchars($arrears_per_day, 2);
-?>
-</td>
+                echo htmlspecialchars($arrears_per_day, 2);
+            ?>
+            </td>
 
-<td>
-<?php
-    static $total_arrears = 0; // Initialize static variable to keep running total of arrears
+            <td>
+            <?php
+                static $total_arrears = 0; // Initialize static variable to keep running total of arrears
 
-    // Calculate total arrears by summing up arrears for each overdue day
-    if ($date <= $yesterday) {
-        if ($arrears_per_day !== '') {
-            $total_arrears += $arrears_per_day;
-        }
-    } else {
-        $total_arrears = ''; // No total arrears for future dates
-    }
+                // Calculate total arrears by summing up arrears for each overdue day
+                if ($date <= $yesterday) {
+                    if ($arrears_per_day !== '') {
+                        $total_arrears += $arrears_per_day;
+                    }
+                } else {
+                    $total_arrears = ''; // No total arrears for future dates
+                }
 
-    echo htmlspecialchars($total_arrears, 2);
-?>
-</td>
-
-
-
+                echo htmlspecialchars($total_arrears, 2);
+            ?>
+            </td>
         </tr>
         <?php endforeach; ?>
     </table>
