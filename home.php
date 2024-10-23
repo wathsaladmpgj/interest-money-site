@@ -24,7 +24,8 @@ $capital = 0;
 $allpayed = 0;
 $dyInterest = 0;
 $allInvest = 0; // Initialize total investment
-
+$totalAgreValu =0;
+$total_arrears=0;
 // Fetch all borrowers from the database
 $sql = "SELECT * FROM borrowers";
 $result = $conn->query($sql);
@@ -32,12 +33,15 @@ $result = $conn->query($sql);
 // Check if there are any results
 if ($result && $result->num_rows > 0) {
     while ($borrower = $result->fetch_assoc()) {
-        $allInvest += $borrower['amount'];
-
         // Compare due date with today's date
         $loan_date = new DateTime($borrower['lone_date']);
         $due_date = new DateTime($borrower['due_date']);
         $today = new DateTime();
+        $yesterday = clone $today;
+        $yesterday->modify('-1 day');
+
+        $allInvest += $borrower['amount'];
+        $totalAgreValu += $borrower['agree_value'];
 
         if ($due_date >= $today) {
             $totalInvest += $borrower['amount'];
@@ -56,7 +60,7 @@ if ($result && $result->num_rows > 0) {
 
                     // Calculate daily interest
                     $dy_interest = $borrower['interest'] / $borrower['no_rental'];
-                    $capital += ($borrower['rental'] - $dy_interest);
+                    $capital += ($payment['rental_amount'] - $dy_interest);
 
                     // Check if payment is made today
                     if ($payment['payment_date'] == date('Y-m-d')) {
@@ -65,15 +69,29 @@ if ($result && $result->num_rows > 0) {
                 }
             }
         } else {
-            // Borrower is overdue, calculate arrears
-            $expected_payment = $borrower['rental'];
-            $arrears_per_day = $expected_payment; // Assuming arrears are the rental amount
-
-            // Total arrears for overdue days
-            $days_overdue = $today->diff($due_date)->days;
-            $total_arrears = $days_overdue * $arrears_per_day;
+            $old_arrears = $borrower['total_arrears'];
         }
+        
+        $total_arrears += $borrower['total_arrears'];
+        
     }
+}
+$sql_payment = "SELECT * FROM payments";
+$result_payment = $conn->query($sql_payment);
+$all_paid = 0;
+while($pay = $result_payment->fetch_assoc()){
+    $all_paid += $pay['rental_amount']; 
+}
+
+$sql_customer = "SELECT COUNT(*) AS total_customers FROM borrowers";
+$result_customer = $conn->query($sql_customer);
+
+if ($result_customer->num_rows > 0) {
+    // Fetch the result
+    $row = $result_customer->fetch_assoc();
+    $total_customer=$row['total_customers'];
+} else {
+    echo "No customers found.";
 }
 
 // Close the database connection
@@ -100,6 +118,7 @@ $conn->close();
                     <li><a href="./barrowBasic.php">Borrower List</a></li>
                     <li><a href="./collect_amount.php">Collect Amount</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
+                    <li><a href="./interest_rate.php">Interest Rate</a></li>
                 </ul>
             </nav>
         </div>
@@ -109,27 +128,37 @@ $conn->close();
             <div class="card1">
                 <div class="card1-2">
                     <h4>CURRENT STOCK</h4>
-                    <h3>Rs. <?php echo number_format($agreeValue - $allpayed+, 2); ?></h3> <!-- Agree value minus payments made -->
+                    <h3>Rs. <?php echo number_format($agreeValue-$allpayed+$old_arrears, 2); ?></h3> <!-- Agree value minus payments made -->
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE CAPITAL</h4>
-                    <h3>Rs. <?php echo number_format($totalInvest - $capital+$total_arrears, 2); ?></h3> <!-- Total investment minus capital -->
+                    <h3>Rs. <?php echo number_format($totalInvest - $capital, 2); ?></h3> <!-- Total investment minus capital -->
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE INTEREST</h4>
                     <h3>Rs. <?php echo number_format(($agreeValue - $allpayed) - ($totalInvest - $capital), 2); ?></h3> <!-- Total future interest -->
                 </div>
                 <div class="card1-2">
+                    <h4>TOTAL ARIARS</h4>
+                    <h3>Rs. <?php echo number_format($total_arrears, 2); ?></h3> <!-- Daily interest -->
+                </div>
+                <div class="card1-2">
                     <h4>DAILY INTEREST</h4>
-                    <h3>Rs. <?php echo number_format($dyInterest, 2); ?></h3> <!-- Daily interest -->
+                    <h3>Rs. <?php echo number_format($dy_interest, 2); ?></h3> <!-- Daily interest -->
                 </div>
             </div>
         </div>
 
         <!-- Dashboard details -->
         <div class="rg-temp">
-            <h2>Overview</h2>
-            <h3>Total Investment: Rs. <?php echo number_format($allInvest, 2); ?></h3>
+            <h3>Number of Customer : <?php echo number_format($total_customer); ?></h3>
+            <hr>
+            <h3>Total AgreeValue:&nbsp; Rs. <?php echo number_format($totalAgreValu, 2); ?></h3>
+            <h3>Total Investment:&nbsp; Rs. <?php echo number_format($allInvest, 2); ?></h3>
+            <h3>Total AgreeValue:&nbsp; Rs. <?php echo number_format($totalAgreValu-$allInvest, 2); ?></h3> 
+            <hr>
+            <h3>Total Payment&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Rs. <?php echo number_format($all_paid, 2); ?></h3>
+            <hr>   
             <h3>Total Rental: Rs. <?php echo number_format($allRental, 2); ?></h3> <!-- Total rental -->
             <h3>Total Paid: Rs. <?php echo number_format($allpayed, 2); ?></h3> <!-- Total amount paid -->
             <h3>Capital: Rs. <?php echo number_format($capital, 2); ?></h3> <!-- Total accumulated capital -->
