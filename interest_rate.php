@@ -43,6 +43,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Interest Rates</title>
+    <link rel="stylesheet" href="./css/interest_rate.css">
 </head>
 <body>
     <h2>INTEREST RATE</h2>

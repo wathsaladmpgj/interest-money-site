@@ -104,7 +104,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
     <div class="header1">
@@ -119,6 +119,7 @@ $conn->close();
                     <li><a href="./collect_amount.php">Collect Amount</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
                     <li><a href="./interest_rate.php">Interest Rate</a></li>
+                    <li><a href="./employee.php">Employee Details</a></li>
                 </ul>
             </nav>
         </div>
@@ -155,7 +156,7 @@ $conn->close();
             <hr>
             <h3>Total AgreeValue:&nbsp; Rs. <?php echo number_format($totalAgreValu, 2); ?></h3>
             <h3>Total Investment:&nbsp; Rs. <?php echo number_format($allInvest, 2); ?></h3>
-            <h3>Total AgreeValue:&nbsp; Rs. <?php echo number_format($totalAgreValu-$allInvest, 2); ?></h3> 
+            <h3>Total Interest: Rs. <?php echo number_format($totalAgreValu-$allInvest, 2); ?></h3> 
             <hr>
             <h3>Total Payment&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Rs. <?php echo number_format($all_paid, 2); ?></h3>
             <hr>   

@@ -1,0 +1,93 @@
+/* Basic styles for the body */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color:aliceblue;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: left;
+    padding-left: 3%;
+    height: 100vh;
+    flex-direction: column;
+}
+
+/* Style for the headings */
+h1 {
+    color: #070675;
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+h2 {
+    font-size: 24px;
+    color: #333;
+    margin-top: 20px;
+}
+
+/* Style for the borrower list */
+ul {
+    list-style-type: none;
+    padding: 0;
+    width: 300px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+
+    display: grid;
+    grid-template-columns: repeat(9, 1fr); /* Creates 3 columns */
+    gap: 20px; /* Space between items */
+}
+
+li {
+    float: left;
+    background-color: #fff;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+    width: 7rem; 
+}
+li a{
+   
+}
+/* Hover effect on borrower list items */
+li:hover {
+    transform: scale(1.03);
+}
+
+/* Style for borrower name links */
+a.borrower-name {
+    text-decoration: none;
+    font-size: 18px;
+    color: #333;
+    font-weight: bold;
+    display: block;
+}
+
+/* Hover effect on links */
+a.borrower-name:hover {
+    color: #070675;
+}
+
+/* Style for new borrowers */
+h2:nth-of-type(1) {
+    color: #070675;
+}
+
+/* Style for old borrowers */
+h2:nth-of-type(2) {
+    color:#070675;
+}
+h2:nth-of-type(3) {
+    color:#070675;
+}
+
+/* Add spacing around the container */
+.container {
+    max-width: 800px;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
