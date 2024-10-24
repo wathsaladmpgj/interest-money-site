@@ -20,6 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $interest_rate = $_POST['interestRate'];
     $lone_date = $_POST['date_lent'];
     $no_rental = $_POST['norental'];
+    $address = $_POST['address'];
 
 
     $month_interest = $amount * $interest_rate/100;
@@ -37,10 +38,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $interest_day = $interest/$no_rental;
 
     // Insert data into the borrowers table
-    $sql = "INSERT INTO borrowers (name,nic, amount, rental, agree_value,interest,interest_day, lone_date, no_rental, due_date) 
-            VALUES (?,?, ?, ?, ?,?, ?,?, ?, ?)";
+    $sql = "INSERT INTO borrowers (name,nic,address, amount, rental, agree_value,interest,interest_day, lone_date, no_rental, due_date) 
+            VALUES (?,?,?, ?, ?, ?,?, ?,?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssdsssssss", $name,$nic, $amount, $rental, $agree_value,$interest,$interest_day, $lone_date, $no_rental, $due_date);
+    $stmt->bind_param("sssdsssssss", $name,$nic,$address, $amount, $rental, $agree_value,$interest,$interest_day, $lone_date, $no_rental, $due_date);
 
     if ($stmt->execute()) {
         echo "<script>";
@@ -60,33 +61,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Borrower</title>
-    <link rel="stylesheet" href="./add_borrow.css">
+    <link rel="stylesheet" href="./css/add_borrow.css">
 </head>
 <body>
     <h1>Add New Borrower</h1>
 
+
     <form action="add_borrower.php" method="post">
+    <h1>Add New Borrower</h1>
+
+    <div class="form-group">
         <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required><br><br>
+        <input type="text" id="name" name="name" required>
+    </div>
 
-        <label for="nic">Enter NIC Number</label>
-        <input type="text" id="nic" name="nic" required><br><br>
+    <div class="form-group">
+        <label for="nic">Enter NIC Number:</label>
+        <input type="text" id="nic" name="nic" required>
+    </div>
 
+    <div class="form-group">
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address">
+    </div>
+
+    <div class="form-group">
         <label for="amount">Loan Amount:</label>
-        <input type="number" id="amount" name="amount" step="0.01" required><br><br>
+        <input type="number" id="amount" name="amount" step="0.01" required>
+    </div>
 
+    <div class="form-group">
         <label for="interestRate">Interest Rate (%):</label>
-        <input type="number" id="interestRate" name="interestRate" min="0" max="100" step="0.01" required><br><br>
+        <input type="number" id="interestRate" name="interestRate" min="0" max="100" step="0.01" required>
+    </div>
 
-
+    <div class="form-group">
         <label for="date_lent">Loan Date:</label>
-        <input type="date" id="date_lent" name="date_lent" required><br><br>
+        <input type="date" id="date_lent" name="date_lent" required>
+    </div>
 
+    <div class="form-group">
         <label for="norental">Number of Rentals:</label>
-        <input type="number" id="norental" name="norental" required><br><br>
+        <input type="number" id="norental" name="norental" required>
+    </div>
 
-        <input type="submit" value="Submit">
-    </form>
+    <input type="submit" value="Submit">
+</form>
+
+      
 </body>
 </html>
 
