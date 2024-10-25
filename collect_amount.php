@@ -10,30 +10,57 @@
     <h2>Add Payment Details</h2>
     
     <form action="" method="post">
-        <label for="showName">Select Name</label><br>
-        <select name="showName" id="showName" required autocomplete="off">
-        <?php 
-        // Connect to the database
-        $conn = new mysqli('localhost', 'root', '', 'interest');
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
+    <label for="showName">Select Name</label><br>
+<input type="text" id="nameInput" placeholder="Type to search..."><br><br>
+<select name="showName" id="showName" required autocomplete="off">
+    <?php 
+    // Connect to the database
+    $conn = new mysqli('localhost', 'root', '', 'interest');
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+
+    // Fetch names of borrowers whose due_date is today or later
+    $sql = "SELECT id, name FROM borrowers WHERE due_date >= CURDATE()";
+    $result = $conn->query($sql);
+
+    if ($result->num_rows > 0) {
+        // Loop through each row and create an option element
+        while ($row = $result->fetch_assoc()) {
+            echo "<option value='".$row['id']."'>".$row['name']."</option>";
+        }
+    } else {
+        echo "<option>No Name available</option>";
+    }
+
+    $conn->close();
+    ?>
+</select><br><br>
+
+<script>
+    const input = document.getElementById('nameInput');
+    const select = document.getElementById('showName');
+
+    input.addEventListener('input', function() {
+        const filter = input.value.toLowerCase();
+        const options = select.options;
+
+        // Loop through the options and hide those that don't match
+        for (let i = 0; i < options.length; i++) {
+            const name = options[i].text.toLowerCase();
+            options[i].style.display = name.includes(filter) ? '' : 'none';
         }
 
-        // Fetch names of borrowers whose due_date is today or later
-        $sql = "SELECT id, name FROM borrowers WHERE due_date >= CURDATE()";
-        $result = $conn->query($sql);
-
-        if ($result->num_rows > 0) {
-            // Loop through each row and create an option element
-            while ($row = $result->fetch_assoc()) {
-                echo "<option value='".$row['id']."'>".$row['name']."</option>";
+        // If there's a match, select the first matching option
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].style.display !== 'none') {
+                select.selectedIndex = i; // Select the matching option
+                break;
             }
-        } else {
-            echo "<option>No Name available</option>";
         }
+    });
+</script>
 
-        $conn->close();
-        ?>
         </select><br><br>
 
         <label for="du_date">Due Date</label><br>
