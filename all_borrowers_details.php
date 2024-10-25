@@ -39,14 +39,19 @@ if ($conn->connect_error) {
         <tr>
             <th>No</th>
             <th>Name</th>
+            <th>Due Date</th>
+            <th>Rental</th>
             <th>Loan Amount</th>
+            <th>Agree Value</th>
+            <th>No rental</th>
+            <th>Total Payment</th>
             <th>Arrears</th>
         </tr>
         <!-- PHP will insert rows here -->
         <?php
              $row_number =1;
             // Assuming connection to the database is already established
-            $result = mysqli_query($conn, "SELECT name, amount, total_arrears, status FROM borrowers ORDER BY id ASC");
+            $result = mysqli_query($conn, "SELECT name, amount, total_arrears,due_date,rental,agree_value,total_payments,no_rental, status FROM borrowers ORDER BY id ASC");
 
             while ($row = mysqli_fetch_assoc($result)) {
                 // Determine the status class based on the database values
@@ -56,8 +61,13 @@ if ($conn->connect_error) {
                 echo "<tr class='{$statusClass}'>";
                 echo "<td>{$row_number}</td>";
                 $row_number++;
-                echo "<td>{$row['name']}</td>";
-                echo "<td>{$row['amount']}</td>";
+                echo "<td class='abc'>{$row['name']}</td>";
+                echo "<td>{$row['due_date']}</td>";
+                echo "<td>{$row['rental']}</td>";
+                echo "<td>" . number_format($row['amount'], 2) . "</td>";
+                echo "<td>{$row['agree_value']}</td>";
+                echo "<td>{$row['no_rental']}</td>";
+                echo "<td>{$row['total_payments']}</td>";
                 echo "<td>{$row['total_arrears']}</td>";
                 echo "</tr>";
             }
