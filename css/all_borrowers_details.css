@@ -1,0 +1,114 @@
+/* General styles for the body */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+h2 {
+    text-align: center;
+    color: #070675;
+    margin-bottom: 20px;
+    font-size: 28px;
+}
+
+
+th, td {
+    border: 1px solid black;
+    padding: 8px;
+    text-align: left;
+}
+/* Styling the table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #070675;
+    color: white;
+    text-transform: uppercase;
+}
+
+td {
+    color: #555;
+}
+
+
+
+.finished {
+    background-color: #070675;
+}
+
+.not-finished {
+    background-color: #fff;
+}
+
+/* Styling the button */
+button {
+    background-color: #070675;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    display: block;
+    margin: 20px auto;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:hover {
+    background-color: #070675;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:active {
+    background-color: #070675;
+}
+
+.finished {
+    background-color: yellow;
+}
+
+.not-finished {
+    background-color: rgb(245, 181, 181);
+}
+.in-progress{
+    background-color: white;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 600px) {
+    table, th, td {
+        width: 100%;
+        display: block;
+    }
+
+    th, td {
+        box-sizing: border-box;
+    }
+
+    th {
+        text-align: center;
+    }
+
+    td {
+        border-bottom: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+}
+
