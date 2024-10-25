@@ -119,7 +119,7 @@ $conn->close();
                     <li><a href="./collect_amount.php">Collect Amount</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
                     <li><a href="./interest_rate.php">Interest Rate</a></li>
-                    <li><a href="./employee.php">Employee Details</a></li>
+                    <li><a href="./employee_details.php">Employee Details</a></li>
                     <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
                 </ul>
             </nav>
