@@ -13,8 +13,34 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch borrowers
-$sql = "SELECT id, name FROM borrowers";
+// Fetch borrowers and update status
+$sql = "SELECT id, name, due_date, total_payments, agree_value FROM borrowers";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $id = $row['id'];
+        $due_date = $row['due_date'];
+        $total_payments = $row['total_payments'];
+        $agree_value = $row['agree_value'];
+
+        // Determine status
+        if ($total_payments == $agree_value) {
+            $status = 'yes'; // Settled
+        } elseif ($due_date < date('Y-m-d') && $total_payments < $agree_value) {
+            $status = 'no'; // Arrears
+        } elseif ($due_date >= date('Y-m-d') && $total_payments < $agree_value) {
+            $status = 'con'; // Currently paying
+        }
+
+        // Update status in the database
+        $update_sql = "UPDATE borrowers SET status = '$status' WHERE id = $id";
+        $conn->query($update_sql);
+    }
+}
+
+// Fetch updated borrowers to display
+$sql = "SELECT id, name, status FROM borrowers";
 $result = $conn->query($sql);
 ?>
 
@@ -28,98 +54,55 @@ $result = $conn->query($sql);
 </head>
 <body>
     <h1>Borrowers</h1>
-    
     <!-- Section for new borrowers -->
     <h2>NEW BORROWERS</h2>
     <ul>
         <?php
-        // Fetch borrowers along with their due_date
-        $sql = "SELECT id, name, due_date,total_payments,agree_value FROM borrowers";
+        $sql = "SELECT id, name, status FROM borrowers WHERE status = 'con'";
         $result = $conn->query($sql);
 
-        // Flags to track if there are new or old borrowers
-        $new_borrowers_exist = false;
-        $old_borrowers_exist = false;
-
         if ($result->num_rows > 0) {
-            // Display new borrowers (with due_date today or later)
             while ($row = $result->fetch_assoc()) {
-                $due_date = $row['due_date'];
-                $total_payment = $row['total_payments'];
-                $agree_value = $row['agree_value'];
-
-                if($total_payment<$agree_value){
-                    if ($due_date >= date('Y-m-d')) {
-                        if (!$new_borrowers_exist) {
-                            $new_borrowers_exist = true;
-                        }
-                        echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "' data-id='" . $row['id'] . "'>" . $row['name'] . "</a></li>";
-                    }
-                }   
+                echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "'>" . $row['name'] . "</li>";
             }
         } else {
-            echo "<li>No borrowers found.</li>";
+            echo "<li>No new borrowers found.</li>";
         }
         ?>
     </ul>
 
+    <hr>
     <!-- Section for borrowers in arrears -->
     <h2>ARREARS BORROWERS</h2>
     <ul>
         <?php
-        // Reset result pointer to fetch rows again for old borrowers
-        $result->data_seek(0);
+        $sql = "SELECT id, name, status FROM borrowers WHERE status = 'no'";
+        $result = $conn->query($sql);
 
-        // Display old borrowers (with due_date before today)
-        while ($row = $result->fetch_assoc()) {
-            $due_date = $row['due_date'];
-            $total_payment = $row['total_payments'];
-            $agree_value = $row['agree_value'];
-
-            // Check if due_date is before today
-            if ($due_date < date('Y-m-d')) {
-                if (!$old_borrowers_exist) {
-                    $old_borrowers_exist = true;
-                }
-
-                if($total_payment<$agree_value){
-                    echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "' data-id='" . $row['id'] . "'>" . $row['name'] . "</a></li>";
-                }   
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "'>" . $row['name'] . "</li>";
             }
-        }
-
-        if (!$old_borrowers_exist) {
-            echo "<li>No arrears borrowers found.</li>";
+        } else {
+            echo "<li>No borrowers in arrears found.</li>";
         }
         ?>
     </ul>
 
-    <h2>SETTEL BORROWERS</h2>
+    <!-- Section for settled borrowers -->
+     <hr>
+    <h2>SETTLED BORROWERS</h2>
     <ul>
         <?php
-        // Reset result pointer to fetch rows again for old borrowers
-        $result->data_seek(0);
+        $sql = "SELECT id, name, status FROM borrowers WHERE status = 'yes'";
+        $result = $conn->query($sql);
 
-        // Display old borrowers (with due_date before today)
-        while ($row = $result->fetch_assoc()) {
-            $due_date = $row['due_date'];
-            $total_payment = $row['total_payments'];
-            $agree_value = $row['agree_value'];
-
-            // Check if due_date is before today
-            
-            if (!$old_borrowers_exist) {
-                $old_borrowers_exist = true;
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "'>" . $row['name'] .  "</li>";
             }
-
-            if($total_payment==$agree_value){
-                echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "' data-id='" . $row['id'] . "'>" . $row['name'] . "</a></li>";
-            }   
-            
-        }
-
-        if (!$old_borrowers_exist) {
-            echo "<li>No arrears borrowers found.</li>";
+        } else {
+            echo "<li>No settled borrowers found.</li>";
         }
         ?>
     </ul>
