@@ -64,6 +64,7 @@ $conn->close();
 <body>
     <nav>
         <li><a href="./enter_employee.php">ENTER EMPLOYEE</a></li>
+        <li><a href="./employee_details.php">EMPLOYEE DETAILS</a></li>
     </nav>
     <h2>Update Employee Details</h2>
     <form action="" method="POST">
