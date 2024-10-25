@@ -25,7 +25,7 @@ if (isset($_POST['submit'])) {
     $result = $conn->query($sql);
 
     // Query to get borrowers who haven't made payments on the selected date (those whose due date is today or in the future)
-    $sq = "SELECT name, rental,total_arrears 
+    $sq = "SELECT name, rental,total_arrears,total_payments 
            FROM borrowers 
            WHERE id NOT IN (SELECT borrower_id FROM payments WHERE payment_date = '$selected_date')
            AND due_date >= CURDATE()";
@@ -103,8 +103,8 @@ if (isset($_POST['submit'])) {
                     <th>No</th>
                     <th>Borrower Name</th>
                     <th>Rental</th>
-                    <th>Payment</th>
-                    <th>Arrears</th>
+                    <th>Total Payment</th>
+                    <th>Total Arrears</th>
                 </tr>";
 
         while($row = $resul->fetch_assoc()) {
@@ -112,6 +112,8 @@ if (isset($_POST['submit'])) {
                     <td>".$row_number++."</td>
                     <td>" . $row['name'] . "</td>
                     <td>" . $row['rental'] . "</td>
+                    <td>" . $row['total_payments'] . "</td>
+                    <td>" . $row['total_arrears'] . "</td>
                 </tr>";
         }
         echo "</table>";
