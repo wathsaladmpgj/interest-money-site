@@ -43,7 +43,9 @@ if ($conn->connect_error) {
             <th>Rental</th>
             <th>Loan Amount</th>
             <th>Agree Value</th>
-            <th>No rental</th>
+            <th>No rent</th>
+            <th>Day passed</th>
+            <th>Due rent</th>
             <th>Total Payment</th>
             <th>Arrears</th>
         </tr>
@@ -51,9 +53,12 @@ if ($conn->connect_error) {
         <?php
              $row_number =1;
             // Assuming connection to the database is already established
-            $result = mysqli_query($conn, "SELECT name, amount, total_arrears,due_date,rental,agree_value,total_payments,no_rental, status FROM borrowers ORDER BY id ASC");
+            $result = mysqli_query($conn, "SELECT name, amount, total_arrears,due_date,rental,agree_value,total_payments,no_rental,no_pay,days_passed, status FROM borrowers ORDER BY id ASC");
+
+            
 
             while ($row = mysqli_fetch_assoc($result)) {
+                $due_rental =$row['days_passed']- $row['no_pay'];
                 // Determine the status class based on the database values
                 $statusClass = ($row['status'] == 'yes') ? 'finished' : (($row['status'] == 'no') ? 'not-finished' : 'in-progress');
                 
@@ -67,6 +72,8 @@ if ($conn->connect_error) {
                 echo "<td>" . number_format($row['amount'], 2) . "</td>";
                 echo "<td>{$row['agree_value']}</td>";
                 echo "<td>{$row['no_rental']}</td>";
+                echo "<td>{$row['days_passed']}</td>";
+                echo "<td>{$due_rental}</td>";
                 echo "<td>{$row['total_payments']}</td>";
                 echo "<td>{$row['total_arrears']}</td>";
                 echo "</tr>";
