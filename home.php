@@ -64,7 +64,8 @@ if ($result && $result->num_rows > 0) {
 
                     // Check if payment is made today
                     if ($payment['payment_date'] == date('Y-m-d')) {
-                        $dyInterest += ($payment['rental_amount'] - $borrower['rental'] + $borrower['interest_day']);
+                        $dyInterest += $dy_interest;
+                        /*($payment['rental_amount'] - $borrower['rental'] + $borrower['interest_day'])*/
                     }
                 }
             }
@@ -146,7 +147,7 @@ $conn->close();
                 </div>
                 <div class="card1-2">
                     <h4>DAILY INTEREST</h4>
-                    <h3>Rs. <?php echo number_format($dy_interest, 2); ?></h3> <!-- Daily interest -->
+                    <h3>Rs. <?php echo number_format($dyInterest, 2); ?></h3> <!-- Daily interest -->
                 </div>
             </div>
         </div>
