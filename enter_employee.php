@@ -1,50 +1,4 @@
-<?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "interest"; // Change this to your database name
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Check if the form is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get the form data
-    $name = $_POST['name'];
-    $salary = $_POST['salary'];
-    $allowance = $_POST['allowance'];
-    $provision = $_POST['provision'];
-
-    // Validate the inputs (optional but recommended)
-    if (empty($name) || empty($salary) || empty($allowance) || empty($provision)) {
-        echo "All fields are required.";
-    } else {
-        // Prepare the SQL query to insert data
-        $sql = "INSERT INTO employee_details (name, salary, allownce, privision) VALUES (?, ?, ?, ?)";
-
-        // Prepare and bind the statement
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siii", $name, $salary, $allowance, $provision);
-
-        // Execute the statement and check for success
-        if ($stmt->execute()) {
-            echo "Employee details inserted successfully!";
-        } else {
-            echo "Error: " . $stmt->error;
-        }
-
-        // Close the statement
-        $stmt->close();
-    }
-}
-
-$conn->close();
-?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -60,7 +14,7 @@ $conn->close();
         <li><a href="./employee_details.php">EMPLOYEE DETAILS</a></li>
     </nav>
     <h2>Enter New Employee Details</h2>
-    <form action="" method="POST">
+    <form action="./enter_employee1.php" method="POST">
         <label for="name">Employee Name</label>
         <input type="text" id="name" name="name" required><br><br>
 
