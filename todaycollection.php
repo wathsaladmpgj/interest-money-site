@@ -29,11 +29,9 @@ if (isset($_POST['submit'])) {
            FROM borrowers 
            WHERE id NOT IN (SELECT borrower_id FROM payments WHERE payment_date = '$selected_date')
            AND due_date >= CURDATE()";
-    $resul = $conn->query($sq);
+    $resul = $conn->query($sq); 
 
-    
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -56,7 +54,7 @@ if (isset($_POST['submit'])) {
     <?php } ?>
 
     <!-- Form to select a date -->
-    <form method="POST" action="">
+    <form action="" method="POST">
         <label for="payment_date">Select Date:</label>
         <input type="date" id="payment_date" name="payment_date" required>
         <button type="submit" name="submit">Search</button>

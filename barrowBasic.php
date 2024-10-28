@@ -106,7 +106,6 @@ $result = $conn->query($sql);
         }
         ?>
     </ul>
-
 </body>
 </html>
 

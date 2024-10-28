@@ -12,7 +12,11 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-date_default_timezone_set('Asia/Colombo'); // Set timezone
+date_default_timezone_set('Asia/Colombo');// Set timezone
+
+//update total_arrears cououm on borrowers table
+$sl = "SELECT * FROM borrowers WHERE id=?";
+
 
 // Initialize variables to store total values
 $totalInvest = 0;
@@ -26,6 +30,7 @@ $dyInterest = 0;
 $allInvest = 0; // Initialize total investment
 $totalAgreValu =0;
 $total_arrears=0;
+$old_arrears =0;
 // Fetch all borrowers from the database
 $sql = "SELECT * FROM borrowers";
 $result = $conn->query($sql);
@@ -70,7 +75,7 @@ if ($result && $result->num_rows > 0) {
                 }
             }
         } else {
-            $old_arrears = $borrower['total_arrears'];
+            $old_arrears += $borrower['total_arrears'];
         }
         
         $total_arrears += $borrower['total_arrears'];
@@ -96,7 +101,7 @@ if ($result_customer->num_rows > 0) {
 }
 
 // Close the database connection
-$conn->close();
+
 ?>
 
 <!DOCTYPE html>
@@ -135,7 +140,7 @@ $conn->close();
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE CAPITAL</h4>
-                    <h3>Rs. <?php echo number_format($totalInvest - $capital, 2); ?></h3> <!-- Total investment minus capital -->
+                    <h3>Rs. <?php echo number_format($totalInvest- $capital +$old_arrears, 2); ?></h3> <!-- Total investment minus capital -->
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE INTEREST</h4>
@@ -168,5 +173,9 @@ $conn->close();
             <h3>Today's Interest: Rs. <?php echo number_format($dyInterest, 2); ?></h3> <!-- Capital from today's payments -->
         </div>
     </div>
+
 </body>
 </html>
+<?php
+$conn->close();
+?>

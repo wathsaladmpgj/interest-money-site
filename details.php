@@ -126,14 +126,9 @@ foreach ($calendar_dates as $date) {
         $expected_payment_by_today += $borrower['rental'];
         $arrears = $expected_payment_by_today-$total_payment;
     }
-    
-
 }
 
-
-// After calculating $total_arrears
-$total_arrears = round($arrears, 2);// Ensure it's rounded to 2 decimal places // Round total_pays to 2 decimal places as well
-
+$total_arrears = round($arrears, 2);
 // Update the total arrears and total pays in the borrowers table
 $update_arrears_sql = "UPDATE borrowers SET total_arrears = ?, total_payments = ? WHERE id = ?";
 $update_arrears_stmt = $conn->prepare($update_arrears_sql);
@@ -148,6 +143,12 @@ if ($update_arrears_stmt->execute()) {
 }
 
 $update_arrears_stmt->close();
+
+
+// After calculating $total_arrears
+
+
+
  // Initialize counter
  $row_number = 1;
 ?>
@@ -171,7 +172,7 @@ $update_arrears_stmt->close();
     <p><strong>No of Rentals:</strong> <?php echo htmlspecialchars($borrower['no_rental']); ?></p>
     <p><strong>Due Date:</strong> <?php echo htmlspecialchars($borrower['due_date']); ?></p>
     <p><strong>Total Payment:</strong>Rs.<?php echo number_format($total_py, 2); ?></p>
-    <p><strong>Arrears:</strong> Rs.<?php echo number_format($arrears, 2); ?></p>
+    <p><strong>Arrears:</strong> Rs.<?php echo number_format($total_arrears, 2); ?></p>
     <p><strong>Closing Date:</strong><!-- Closing date if applicable --></p>
 
     <h2>Add Payment Details</h2>
@@ -418,6 +419,7 @@ $update_arrears_stmt->close();
         </tr>
         <?php endforeach; ?>
     </table>
+
 </body>
 </html>
 
