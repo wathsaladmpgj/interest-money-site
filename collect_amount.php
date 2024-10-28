@@ -9,7 +9,7 @@
 <body>
     <h2>Add Payment Details</h2>
     
-    <form action="" method="post">
+    <form action="./collect_amount1.php" method="post">
     <label for="showName">Select Name</label><br>
 <input type="text" id="nameInput" placeholder="Type to search..."><br><br>
 <select name="showName" id="showName" required autocomplete="off">
@@ -82,39 +82,7 @@
         }
     </script>
 
-<?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get form data
-    $borrower_id = $_POST['showName'];
-    $du_date = $_POST['du_date'];
-    $payment_date = $_POST['payment_date'];
-    $payment_amount = $_POST['payment'];
 
-    // Reconnect to the database
-    $conn = new mysqli('localhost', 'root', '', 'interest');
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    // Insert payment details into payments table
-    $sql = "INSERT INTO payments (borrower_id, du_date, rental_amount, payment_date) VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("isss", $borrower_id, $du_date, $payment_amount, $payment_date);
-
-    if ($stmt->execute()) {
-        // Redirect to the previous page after successful insertion
-        echo "<script>alert('Payment added successfully!');</script>"; // Adjust this line if needed
-        exit(); // Ensure no further code is executed after redirection
-    } else {
-        // Use alert box for errors
-        echo "<script>alert('Error: " . addslashes($conn->error) . "');</script>"; // Escape quotes for JavaScript
-    }
-
-    // Close the connection
-    $stmt->close();
-    $conn->close();
-}
-?>
 
 </body>
 </html>
