@@ -27,24 +27,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $result->fetch_assoc();
     
             $total_payment = $data['total_payment'] ?? 0;
-            $total_py = $data['total_payment'] ?? 0; // Set to total for total_payments
-    
             $stmt->close();
-            return [$total_payment, $total_py];
+            return $total_payment;
         }
 
         date_default_timezone_set('Asia/Colombo'); // Set time zone
 
-        $sq = "SELECT * FROM borrowers";
-        $result = $conn->query($sq);
+        $borrowers_sql = "SELECT * FROM borrowers";
+        $borrowers_result = $conn->query($borrowers_sql);
 
-        if ($result->num_rows > 0) {
-            while ($borrower = $result->fetch_assoc()) {
+        if ($borrowers_result->num_rows > 0) {
+            // Fetch total rental amounts up to yesterday for each borrower
+            $payments_sql = "SELECT borrower_id, SUM(rental_amount) AS total_rental_paid
+                             FROM payments WHERE du_date <= CURDATE() - INTERVAL 1 DAY GROUP BY borrower_id";
+            $payments_result = $conn->query($payments_sql);
+            $total_rental_paid_by_borrower = [];
+
+            while ($row = $payments_result->fetch_assoc()) {
+                $total_rental_paid_by_borrower[$row['borrower_id']] = $row['total_rental_paid'];
+            }
+
+            while ($borrower = $borrowers_result->fetch_assoc()) {
                 $borrower_id = $borrower['id'];
                 $bar_rent = $borrower['rental'];
-
-                // Calculate total payments for the borrower
-                list($total_payment, $total_py) = fetch_total_payments($conn, $borrower_id);
+                $total_py = fetch_total_payments($conn, $borrower_id);
+                
+                // Use total rental paid from the calculated array or default to 0
+                $total_rental_paid = $total_rental_paid_by_borrower[$borrower_id] ?? 0;
 
                 $loan_date = new DateTime($borrower['lone_date']); 
                 $loan_date->modify('+1 day'); 
@@ -69,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $expected_payment_by_today = $days_passed * $bar_rent;
 
                 // Calculate arrears
-                $arrears = max($expected_payment_by_today - $total_payment, 0);
+                $arrears = max($expected_payment_by_today - $total_rental_paid, 0);
                 $total_arrears = round($arrears, 2);
 
                 // Update the arrears in the database
@@ -83,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update_stmt->close();
             }
 
-            
             // Run the rental query to update no_pay
             $rental_query = "UPDATE borrowers b
                 LEFT JOIN (
@@ -96,19 +104,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!$conn->query($rental_query)) {
                 echo "Error updating no_pay in borrowers: " . $conn->error;
-            } else {
-                echo "<script>alert('Successfully updated!'); 
-                window.location.href = 'collect_amount.php';
-                </script>";
             }
+            
         } else {
             echo "No borrowers found.";
         }
+
+        echo "<script>alert('Successfully updated!'); 
+            window.location.href = 'collect_amount.php';
+            </script>";
         exit();
     } else {
         echo "<script>alert('Error: " . addslashes($stmt->error) . "');</script>";
     }
-    $stmt->close(); // Close the statement
+    $stmt->close();
 }
 
 $conn->close();
