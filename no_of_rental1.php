@@ -18,7 +18,7 @@ if ($conn->connect_error) {
 date_default_timezone_set('Asia/Colombo');
 
 // Update each borrower's number of payments in the database
-$query = "UPDATE borrowers b
+$rental_query = "UPDATE borrowers b
     LEFT JOIN (
         SELECT borrower_id, COUNT(du_date) AS no_pay
         FROM payments

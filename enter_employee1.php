@@ -16,31 +16,29 @@ if ($conn->connect_error) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get the form data
     $name = $_POST['name'];
-    $salary = $_POST['salary'];
-    $allowance = $_POST['allowance'];
-    $provision = $_POST['provision'];
-
+    $nic = $_POST['nic'];
+    
     // Validate the inputs (optional but recommended)
-    if (empty($name) || empty($salary) || empty($allowance) || empty($provision)) {
+    if (empty($name) || empty($nic)) {
         echo "All fields are required.";
     } else {
         // Prepare the SQL query to insert data
-        $sql = "INSERT INTO employee_details (name, salary, allownce, privision) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO employee_details (name, nic) VALUES (?, ?)";
 
         // Prepare and bind the statement
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("siii", $name, $salary, $allowance, $provision);
+        $stmt->bind_param("ss", $name, $nic);
 
         // Execute the statement and check for success
         if ($stmt->execute()) {
             echo "<script>";
-            echo "alert('Employee details inserted successfully!')";
-            echo "window.location.href = 'add_borrower.php';";
+            echo "alert('Employee details inserted successfully!');"; // Add semicolon here
+            echo "window.location.href = 'enter_employee.php';"; // Add semicolon here
             echo "</script>";
         } else {
             echo "<script>";
-            echo "alert('Error:')" . $stmt->error;
-            echo "window.location.href = 'add_borrower.php';";
+            echo "alert('Error: " . $stmt->error . "');"; // Add semicolon here and fix error display
+            echo "window.location.href = 'enter_employee.php';"; // Add semicolon here
             echo "</script>";
         }
 

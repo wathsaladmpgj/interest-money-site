@@ -11,21 +11,14 @@
 <body>
     <nav>
         <li><a href="./employee.php">UPDATE EMPLOYEE</a></li>
-        <li><a href="./employee_details.php">EMPLOYEE DETAILS</a></li>
     </nav>
     <h2>Enter New Employee Details</h2>
-    <form action="./enter_employee1.php" method="POST">
+    <form action="enter_employee1.php" method="POST">
         <label for="name">Employee Name</label>
         <input type="text" id="name" name="name" required><br><br>
 
-        <label for="salary">Salary</label>
-        <input type="number" id="salary" name="salary" required><br><br>
-
-        <label for="allowance">Allowance</label>
-        <input type="number" id="allowance" name="allowance" required><br><br>
-
-        <label for="provision">Provision</label>
-        <input type="number" id="provision" name="provision" required><br><br>
+        <label for="nic">NIC</label>
+        <input type="text" id="nic" name="nic" required><br><br>
 
         <input type="submit" value="Submit">
     </form>

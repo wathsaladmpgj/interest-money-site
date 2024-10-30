@@ -25,29 +25,9 @@ $result = $stmt->get_result();
 $borrower = $result->fetch_assoc();
 
 $bar_rent = $borrower['rental'];
-$dy_interest = $borrower['interest']/$borrower['no_rental'];
+$dy_interest = $borrower['interest_day'];
 $cap = $bar_rent - $dy_interest;
 
-
-// Insert payment details if the form is submitted
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $du_date = $_POST['du_date'];
-    $payment_am = $_POST['payment'];
-    $payment_date =$_POST['payment_date'];
-
-    // Insert into payments table
-    $insert_sql = "INSERT INTO payments (borrower_id, du_date, rental_amount, payment_date) VALUES (?, ?,?, ?)";
-    $insert_stmt = $conn->prepare($insert_sql);
-    $insert_stmt->bind_param("isss", $borrower_id, $du_date, $payment_am,$payment_date);
-
-    if ($insert_stmt->execute()) {
-        echo "<script>alert('Payment added successfully!');</script>";
-    } else {
-        echo "Error: " . $conn->error;
-    }
-
-    $insert_stmt->close();
-}
 
 // Fetch payment details
 function fetch_payments($conn, $borrower_id) {
@@ -116,38 +96,6 @@ function payment_made($date, $paid_dates) {
     return in_array($date->format('Y-m-d'), array_column($paid_dates, 'du_date'));
 }
 
-// Calculate arrears
-$expected_payment_by_today = 0;
-$arrears = 0;
-
-
-foreach ($calendar_dates as $date) {
-    if ($date<=$yesterday) { 
-        $expected_payment_by_today += $borrower['rental'];
-        $arrears = $expected_payment_by_today-$total_payment;
-    }
-}
-
-$total_arrears = round($arrears, 2);
-// Update the total arrears and total pays in the borrowers table
-$update_arrears_sql = "UPDATE borrowers SET total_arrears = ?, total_payments = ? WHERE id = ?";
-$update_arrears_stmt = $conn->prepare($update_arrears_sql);
-
-// Ensure that you are binding the parameters correctly
-$update_arrears_stmt->bind_param("ddi", $total_arrears, $total_py, $borrower_id);
-
-if ($update_arrears_stmt->execute()) {
-    echo "<script>console.log('Total arrears and total pays updated successfully!');</script>";
-} else {
-    echo "Error updating arrears and pays: (" . $update_arrears_stmt->errno . ") " . $update_arrears_stmt->error;
-}
-
-$update_arrears_stmt->close();
-
-
-// After calculating $total_arrears
-
-
 
  // Initialize counter
  $row_number = 1;
@@ -172,22 +120,10 @@ $update_arrears_stmt->close();
     <p><strong>No of Rentals:</strong> <?php echo htmlspecialchars($borrower['no_rental']); ?></p>
     <p><strong>Due Date:</strong> <?php echo htmlspecialchars($borrower['due_date']); ?></p>
     <p><strong>Total Payment:</strong>Rs.<?php echo number_format($total_py, 2); ?></p>
-    <p><strong>Arrears:</strong> Rs.<?php echo number_format($total_arrears, 2); ?></p>
+    <p><strong>Arrears:</strong> Rs.<?php echo number_format($borrower['total_arrears'], 2); ?></p>
     <p><strong>Closing Date:</strong><!-- Closing date if applicable --></p>
 
-    <h2>Add Payment Details</h2>
-    <form action="" method="post">
-        <label for="du_date">Due Date</label><br>
-        <input type="date" id="du_date" name="du_date" required><br><br>
-
-        <label for="payment_date">Payment Date</label><br>
-        <input type="date" id="payment_date" name="payment_date" required><br><br>
-
-        <label for="payment">payment</label><br>
-        <input type="number" id="payment" name="payment" step="0.01" required><br><br>
-
-        <input type="submit" value="Add Payment">
-    </form>
+   
 
     <h2>Payment Calendar from Day After Loan Date to Due Date</h2>
 
@@ -328,10 +264,10 @@ $update_arrears_stmt->close();
                 if (payment_made($date, $paid_dates)) {
                     foreach ($paid_dates as $paid) {
                         if ($paid['du_date'] == $date->format('Y-m-d')) {
-                            if($bar_rent<=$paid['rental_amount']){
+                            if($dy_interest<=$paid['rental_amount']){
                                 $capital_C = round($paid['rental_amount']-$dy_interest,2);
                             }else{
-                                $capital_C = round($paid['rental_amount']-$dy_interest,2);
+                                $capital_C = 0;
                             }
                             break;
                         }
@@ -354,10 +290,10 @@ $update_arrears_stmt->close();
                 if (payment_made($date, $paid_dates)) {
                     foreach ($paid_dates as $paid){
                     if ($paid['du_date'] == $date->format('Y-m-d')) {
-                        if($bar_rent<=$paid['rental_amount']){
+                        if($dy_interest<=$paid['rental_amount']){
                             $interest = round($dy_interest,2);
                         }else{
-                            $interest = round($dy_interest,2);
+                            $interest = round($paid['rental_amount'],2);
                         }
                         break;
                     }
