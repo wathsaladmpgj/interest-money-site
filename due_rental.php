@@ -10,7 +10,7 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-
+date_default_timezone_set('Asia/Colombo');
 // Fetch updated data to display in the table again
 $query = "SELECT id, name, amount, total_arrears, lone_date, due_date, days_passed FROM borrowers ORDER BY id ASC";
 $result = mysqli_query($conn, $query);
