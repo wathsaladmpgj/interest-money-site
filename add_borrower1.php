@@ -37,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sql = "INSERT INTO borrowers (name, nic, address, amount, rental, agree_value, interest, interest_day, lone_date, no_rental, due_date) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssdsssssss", $name, $nic, $address, $amount, $rental, $agree_value, $interest, $interest_day, $lone_date, $no_rental, $due_date);
+    $stmt->bind_param("sssdddddsis", $name, $nic, $address, $amount, $rental, $agree_value, $interest, $interest_day, $lone_date, $no_rental, $due_date);
 
     if ($stmt->execute()) {
         echo "<script>";

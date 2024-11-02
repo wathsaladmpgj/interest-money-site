@@ -39,6 +39,7 @@ if ($conn->connect_error) {
         <tr>
             <th>No</th>
             <th>Name</th>
+            <th>Lone Date</th>
             <th>Due Date</th>
             <th>Rental</th>
             <th>Loan Amount</th>
@@ -53,7 +54,7 @@ if ($conn->connect_error) {
         <?php
              $row_number =1;
             // Assuming connection to the database is already established
-            $result = mysqli_query($conn, "SELECT name, amount, total_arrears,due_date,rental,agree_value,total_payments,no_rental,no_pay,days_passed, status FROM borrowers ORDER BY id ASC");
+            $result = mysqli_query($conn, "SELECT name, amount, total_arrears,due_date,rental,agree_value,total_payments,no_rental,no_pay,days_passed,lone_date, status FROM borrowers ORDER BY id ASC");
 
             
 
@@ -67,6 +68,7 @@ if ($conn->connect_error) {
                 echo "<td>{$row_number}</td>";
                 $row_number++;
                 echo "<td class='abc'>{$row['name']}</td>";
+                echo "<td>{$row['lone_date']}</td>";
                 echo "<td>{$row['due_date']}</td>";
                 echo "<td>{$row['rental']}</td>";
                 echo "<td>" . number_format($row['amount'], 2) . "</td>";

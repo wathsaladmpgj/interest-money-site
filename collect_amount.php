@@ -21,7 +21,7 @@
     }
 
     // Fetch names of borrowers whose due_date is today or later
-    $sql = "SELECT id, name FROM borrowers WHERE due_date >= CURDATE()";
+    $sql = "SELECT id, name FROM borrowers"; // WHERE due_date >= CURDATE()
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
