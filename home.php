@@ -11,6 +11,102 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+//-----------------------------------------------------------------------------------------------------//
+function fetch_total_payments($conn, $borrower_id) {
+    $sl = "SELECT SUM(rental_amount) AS total_payment FROM payments WHERE borrower_id = ?";
+    $stmt = $conn->prepare($sl);
+    $stmt->bind_param("i", $borrower_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $data = $result->fetch_assoc();
+
+    $total_payment = $data['total_payment'] ?? 0;
+    $stmt->close();
+    return $total_payment;
+}
+
+date_default_timezone_set('Asia/Colombo'); // Set time zone
+
+$borrowers_sql = "SELECT * FROM borrowers";
+$borrowers_result = $conn->query($borrowers_sql);
+
+if ($borrowers_result->num_rows > 0) {
+    // Fetch total rental amounts up to yesterday for each borrower
+    $payments_sql = "SELECT borrower_id, SUM(rental_amount) AS total_rental_paid
+                     FROM payments WHERE du_date <= CURDATE() - INTERVAL 1 DAY GROUP BY borrower_id";
+    $payments_result = $conn->query($payments_sql);
+    $total_rental_paid_by_borrower = [];
+
+    while ($row = $payments_result->fetch_assoc()) {
+        $total_rental_paid_by_borrower[$row['borrower_id']] = $row['total_rental_paid'];
+    }
+
+    while ($borrower = $borrowers_result->fetch_assoc()) {
+        $borrower_id = $borrower['id'];
+        $bar_rent = $borrower['rental'];
+        $total_py = fetch_total_payments($conn, $borrower_id);
+        
+        // Use total rental paid from the calculated array or default to 0
+        $total_rental_paid = $total_rental_paid_by_borrower[$borrower_id] ?? 0;
+
+        $loan_date = new DateTime($borrower['lone_date']); 
+        $loan_date->modify('+1 day'); 
+        $due_date = new DateTime($borrower['due_date']);
+        $today = new DateTime();
+        $yesterday = clone $today;
+        $yesterday->modify('-1 day');
+
+        // Calculate days passed based on due date
+        if ($due_date >= $today) {
+            $end_date = clone $today;
+            $days_passed = $loan_date->diff($end_date)->days; 
+        } elseif ($due_date >= $yesterday) {
+            $end_date = $due_date;
+            $days_passed = $loan_date->diff($end_date)->days; 
+        } else {
+            $due_date->modify('+1 day');
+            $days_passed = $loan_date->diff($due_date)->days; 
+        }
+
+        // Expected total payment by today
+        $expected_payment_by_today = $days_passed * $bar_rent;
+
+        // Calculate arrears
+        $arrears = max($expected_payment_by_today - $total_rental_paid, 0);
+        $total_arrears = round($arrears, 2);
+
+        // Update the arrears in the database
+        $update_sql = "UPDATE borrowers SET total_arrears = ?, total_payments = ?, days_passed = ? WHERE id = ?";
+        $update_stmt = $conn->prepare($update_sql);
+        $update_stmt->bind_param("dddi", $total_arrears, $total_py, $days_passed, $borrower_id);
+
+        if (!$update_stmt->execute()) {
+            echo "Error updating arrears for borrower ID $borrower_id: " . $update_stmt->error . "<br>";
+        }
+        $update_stmt->close();
+    }
+
+    // Run the rental query to update no_pay
+    $rental_query = "UPDATE borrowers b
+        LEFT JOIN (
+            SELECT borrower_id, COUNT(du_date) AS no_pay
+            FROM payments
+            WHERE payment_date <= CURDATE()
+            GROUP BY borrower_id
+        ) p ON b.id = p.borrower_id
+        SET b.no_pay = IFNULL(p.no_pay, 0)";
+
+    if (!$conn->query($rental_query)) {
+        echo "Error updating no_pay in borrowers: " . $conn->error;
+    }
+    
+} else {
+    echo "No borrowers found.";
+}
+
+
+
+//-----------------------------------------------------------------------------------------------------//
 
 date_default_timezone_set('Asia/Colombo');// Set timezone
 
@@ -32,6 +128,8 @@ $totalAgreValu =0;
 $total_arrears=0;
 $old_arrears =0;
 $all_interest=0;
+$day_interest=0;
+$dy_Interest=0;
 // Fetch all borrowers from the database
 $sql = "SELECT * FROM borrowers";
 $result = $conn->query($sql);
@@ -80,6 +178,8 @@ if ($result && $result->num_rows > 0) {
                 while ($payment = $resultPayments->fetch_assoc()) {
                     $allpayed += $payment['rental_amount'];
                     $dy_interest = $borrower['interest_day'] ;
+                    $payment_day = $payment['payment_date'];
+                    
 
                     // Check if payment is made today
                     
@@ -89,7 +189,16 @@ if ($result && $result->num_rows > 0) {
                     else{
                         $dyInterest += $payment['rental_amount'];
                     }
-                       /*($payment['rental_amount'] - $borrower['rental'] + $borrower['interest_day'])*/  
+                       /*($payment['rental_amount'] - $borrower['rental'] + $borrower['interest_day'])*/
+                    
+                    if($payment_day == $today->format('Y-m-d')){
+                        if($dy_interest<=$payment['rental_amount']){
+                            $dy_Interest += $dy_interest;
+                        }
+                        else{
+                            $dy_Interest += $payment['rental_amount'];
+                        }
+                    } 
                     
                 }
             }
@@ -130,6 +239,7 @@ while($emp = $result_employee->fetch_assoc()){
 
 // Close the database connection
 
+
 ?>
 
 <!DOCTYPE html>
@@ -153,6 +263,7 @@ while($emp = $result_employee->fetch_assoc()){
                     <li><a href="./collect_amount.php">Collect Amount</a></li>
                     <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
+                    <li><a href="./monthly_details.php">Monthly Details</a></li>
                     <li><a href="./interest_rate.php">Interest Rate</a></li>
                     <li><a href="./employee.php">Employee Details</a></li>
                 </ul>
@@ -180,7 +291,7 @@ while($emp = $result_employee->fetch_assoc()){
                 </div>
                 <div class="card1-2">
                     <h4>DAILY INTEREST</h4>
-                    <h3>Rs. <?php echo number_format($dyInterest, 2); ?></h3> <!-- Daily interest -->
+                    <h3>Rs. <?php echo number_format($dy_Interest, 2); ?></h3> <!-- Daily interest -->
                 </div>
             </div>
         </div>
@@ -202,10 +313,6 @@ while($emp = $result_employee->fetch_assoc()){
             <h3>Privision:&nbsp; Rs. <?php echo number_format($all_privision, 2); ?></h3>
             <h3>Profit:&nbsp; Rs. <?php echo number_format($dyInterest-$all_salary-$all_allowance-$all_privision, 2); ?></h3>
             <hr>   
-            <h3>Total Rental: Rs. <?php echo number_format($allRental, 2); ?></h3> <!-- Total rental -->
-            <h3>Total Paid: Rs. <?php echo number_format($allpayed, 2); ?></h3> <!-- Total amount paid -->
-            <h3>Capital: Rs. <?php echo number_format($capital, 2); ?></h3> <!-- Total accumulated capital -->
-            <h3>Today's Interest: Rs. <?php echo number_format($dyInterest, 2); ?></h3> <!-- Capital from today's payments -->
         </div>
     </div>
 

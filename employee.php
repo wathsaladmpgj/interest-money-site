@@ -64,7 +64,6 @@ $conn->close();
 <body>
     <nav>
         <li><a href="./enter_employee.php">ENTER EMPLOYEE</a></li>
-        <li><a href="./employee_details.php">EMPLOYEE DETAILS</a></li>
     </nav>
     <h2>Update Employee Details</h2>
     <form action="" method="POST">
@@ -98,7 +97,7 @@ $conn->close();
         </div>
        
         <div class="form-group">
-        <label for="privision">Provision</label>
+        <label for="privision">Privision</label>
         <input type="number" id="privision" name="privision" required>
         </div>
         
