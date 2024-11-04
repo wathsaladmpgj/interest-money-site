@@ -263,7 +263,7 @@ while($emp = $result_employee->fetch_assoc()){
                     <li><a href="./collect_amount.php">Collect Amount</a></li>
                     <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
-                    <li><a href="./monthly_details.php">Monthly Details</a></li>
+                    <li><a href="./monthly_interest.php">Monthly Details</a></li>
                     <li><a href="./interest_rate.php">Interest Rate</a></li>
                     <li><a href="./employee.php">Employee Details</a></li>
                 </ul>
@@ -304,7 +304,7 @@ while($emp = $result_employee->fetch_assoc()){
             <h3>Total Investment:&nbsp; Rs. <?php echo number_format($allInvest, 2); ?></h3>
             <h3>Total Interest: Rs. <?php echo number_format($totalAgreValu-$allInvest, 2); ?></h3> 
             <hr>
-            <h3>Total Payment&nbsp;: Rs. <?php echo number_format($all_paid, 2); ?></h3>
+            <h3>Total Collection&nbsp;: Rs. <?php echo number_format($all_paid, 2); ?></h3>
             <h3>Paid capital: Rs. <?php echo number_format($all_paid-$dyInterest, 2); ?></h3>
             <h3>Paid Interest: Rs. <?php echo number_format($dyInterest, 2); ?></h3>
             <hr>
