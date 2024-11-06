@@ -26,14 +26,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt->execute()) {
         echo "<script>";
         echo "alert('Interest rates updated successfully!');";
-        echo "window.location.href = 'interest_rate.php';";
+        echo "window.location.href = 'monthly_details.php';";
         echo "</script>";
         // Optionally redirect to avoid resubmission
         // header("Location: /path/to/your/success/page.php");
     } else {
         echo "<script>";
         echo "alert('Error:');";
-        echo "window.location.href = 'interest_rate.php';";
+        echo "window.location.href = 'monthly_details.php';";
         echo "</script>";
     }
 
