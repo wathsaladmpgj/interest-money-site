@@ -51,3 +51,11 @@ select {
     padding: 5px;
     font-size: 16px;
 }
+form{
+    text-align: left;
+    margin-left: 2rem;
+}
+.from_hed{
+    text-align: left;
+    margin-left: 2rem;
+}
