@@ -265,6 +265,7 @@ while($emp = $result_employee->fetch_assoc()){
                     <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
                     <li><a href="./monthly_details.php">Monthly Details</a></li>
+                    <li><a href="./loan_payment_summary.php">Summary</a></li>
                     <li><a href="./employee.php">Employee Details</a></li>
                 </ul>
             </nav>
@@ -315,6 +316,12 @@ while($emp = $result_employee->fetch_assoc()){
             <hr>   
         </div>
     </div>
+
+    <script>
+    setTimeout(function() {
+        location.reload();
+    }, 30000);  // Refresh every 30 seconds
+</script>
 
 </body>
 </html>
