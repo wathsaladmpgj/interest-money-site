@@ -339,6 +339,11 @@ while ($monthly_interest = $result_monthly->fetch_assoc()) {
 </table>
 
 <!--------------------------------------------------------------------------------------------------------------------------->
+<script>
+    setTimeout(function() {
+        location.reload();
+    }, 30000);  // Refresh every 30 seconds
+</script>
 </body>
 </html>
 
