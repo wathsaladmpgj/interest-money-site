@@ -1,0 +1,59 @@
+ /* Style for the whole page */
+ body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Table styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+/* Table header styling */
+th {
+    background-color: #070675;
+    color: white;
+    padding: 12px 15px;
+    text-align: center;
+    font-size: 16px;
+}
+
+/* Table cell styling */
+td {
+    background-color: #f9f9f9;
+    color: #333;
+    padding: 12px 15px;
+    text-align: center;
+    font-size: 14px;
+    border: 1px solid #ddd;
+}
+
+/* Table row hover effect */
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Styling for the table borders */
+th, td {
+    border: 1px solid #ddd;
+}
+
+/* Styling for the stocks column (highlight it) */
+
+
+/* Style for the table container */
+.table-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+/* Additional styles */
+h2 {
+    text-align: center;
+    color: #333;
+}
