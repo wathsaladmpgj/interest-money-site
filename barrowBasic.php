@@ -25,7 +25,7 @@ if ($result->num_rows > 0) {
         $agree_value = $row['agree_value'];
 
         // Determine status
-        if ($total_payments == $agree_value) {
+        if ($total_payments >= $agree_value) {
             $status = 'yes'; // Settled
         } elseif ($due_date < date('Y-m-d') && $total_payments < $agree_value) {
             $status = 'no'; // Arrears
@@ -38,10 +38,6 @@ if ($result->num_rows > 0) {
         $conn->query($update_sql);
     }
 }
-
-// Fetch updated borrowers to display
-$sql = "SELECT id, name, status FROM borrowers";
-$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -54,16 +50,17 @@ $result = $conn->query($sql);
 </head>
 <body>
     <h1>Borrowers</h1>
+
     <!-- Section for new borrowers -->
     <h2>NEW BORROWERS</h2>
     <ul>
         <?php
-        $sql = "SELECT id, name, status FROM borrowers WHERE status = 'con'";
-        $result = $conn->query($sql);
+        $sql_con = "SELECT id, name, status FROM borrowers WHERE status = 'con'";
+        $result_con = $conn->query($sql_con);
 
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "'>" . $row['name'] . "</li>";
+        if ($result_con->num_rows > 0) {
+            while ($row_con = $result_con->fetch_assoc()) {
+                echo "<li><a class='borrower-name' href='details.php?id=" . $row_con['id'] . "'>" . $row_con['name'] . "</a></li>";
             }
         } else {
             echo "<li>No new borrowers found.</li>";
@@ -72,16 +69,17 @@ $result = $conn->query($sql);
     </ul>
 
     <hr>
+    
     <!-- Section for borrowers in arrears -->
     <h2>ARREARS BORROWERS</h2>
     <ul>
         <?php
-        $sql = "SELECT id, name, status FROM borrowers WHERE status = 'no'";
-        $result = $conn->query($sql);
+        $sql_no = "SELECT id, name, status FROM borrowers WHERE status = 'no'";
+        $result_no = $conn->query($sql_no);
 
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "'>" . $row['name'] . "</li>";
+        if ($result_no->num_rows > 0) {
+            while ($row_no = $result_no->fetch_assoc()) {
+                echo "<li><a class='borrower-name' href='details.php?id=" . $row_no['id'] . "'>" . $row_no['name'] . "</a></li>";
             }
         } else {
             echo "<li>No borrowers in arrears found.</li>";
@@ -89,17 +87,18 @@ $result = $conn->query($sql);
         ?>
     </ul>
 
+    <hr>
+
     <!-- Section for settled borrowers -->
-     <hr>
     <h2>SETTLED BORROWERS</h2>
     <ul>
         <?php
-        $sql = "SELECT id, name, status FROM borrowers WHERE status = 'yes'";
-        $result = $conn->query($sql);
+        $sql_yes = "SELECT id, name, status FROM borrowers WHERE status = 'yes'";
+        $result_yes = $conn->query($sql_yes);
 
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                echo "<li><a class='borrower-name' href='details.php?id=" . $row['id'] . "'>" . $row['name'] .  "</li>";
+        if ($result_yes->num_rows > 0) {
+            while ($yes_row = $result_yes->fetch_assoc()) {
+                echo "<li><a class='borrower-name' href='details.php?id=" . $yes_row['id'] . "'>" . $yes_row['name'] . "</a></li>";
             }
         } else {
             echo "<li>No settled borrowers found.</li>";
