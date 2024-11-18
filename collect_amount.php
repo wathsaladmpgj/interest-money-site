@@ -16,6 +16,7 @@
     <?php 
     // Connect to the database
     $conn = new mysqli('localhost', 'root', '', 'interest');
+    $conn = new mysqli('localhost', getenv('root'),'',getenv(''), 'interest');
     if ($conn->connect_error) {
         die("Connection failed: " . $conn->connect_error);
     }
@@ -27,7 +28,7 @@
     if ($result->num_rows > 0) {
         // Loop through each row and create an option element
         while ($row = $result->fetch_assoc()) {
-            echo "<option value='".$row['id']."'>".$row['name']."</option>";
+            echo "<option value='".htmlspecialchars($row['id'])."'>".htmlspecialchars($row['name'])."</option>";
         }
     } else {
         echo "<option>No Name available</option>";
