@@ -165,48 +165,44 @@ if ($result && $result->num_rows > 0) {
         $totalAgreValu += $borrower['agree_value'];
 
         //if ($due_date >= $today) {
-            $totalInvest += $borrower['amount'];
-            $agreeValue += $borrower['agree_value'];
-            $totalInterest += $borrower['interest'];
-            $dailyInterest += $borrower['interest_day'];
-            $allRental += $borrower['rental'];
+        $totalInvest += $borrower['amount'];
+        $agreeValue += $borrower['agree_value'];
+        $totalInterest += $borrower['interest'];
+        $dailyInterest += $borrower['interest_day'];
+        $allRental += $borrower['rental'];
 
-            // Fetch payments for the current borrower
-            $sqlPayments = "SELECT * FROM payments WHERE borrower_id = " . $borrower['id'];
-            $resultPayments = $conn->query($sqlPayments);
+        // Fetch payments for the current borrower
+        $sqlPayments = "SELECT * FROM payments WHERE borrower_id = " . $borrower['id'];
+        $resultPayments = $conn->query($sqlPayments);
 
-            if ($resultPayments && $resultPayments->num_rows > 0) {
-                while ($payment = $resultPayments->fetch_assoc()) {
-                    $allpayed += $payment['rental_amount'];
-                    $dy_interest = $borrower['interest_day'] ;
-                    $payment_day = $payment['payment_date'];
+        if ($resultPayments && $resultPayments->num_rows > 0) {
+            while ($payment = $resultPayments->fetch_assoc()) {
+                $allpayed += $payment['rental_amount'];
+                $dy_interest = $borrower['interest_day'] ;
+                $payment_day = $payment['payment_date'];
                     
 
-                    // Check if payment is made today
+                // Check if payment is made today
                     
+                if($dy_interest<=$payment['rental_amount']){
+                    $dyInterest += $dy_interest;
+                }
+                else{
+                    $dyInterest += $payment['rental_amount'];
+                }
+                /*($payment['rental_amount'] - $borrower['rental'] + $borrower['interest_day'])*/
+                    
+                if($payment_day == $today->format('Y-m-d')){
                     if($dy_interest<=$payment['rental_amount']){
-                        $dyInterest += $dy_interest;
+                        $dy_Interest += $dy_interest;
                     }
                     else{
-                        $dyInterest += $payment['rental_amount'];
+                        $dy_Interest += $payment['rental_amount'];
                     }
-                       /*($payment['rental_amount'] - $borrower['rental'] + $borrower['interest_day'])*/
-                    
-                    if($payment_day == $today->format('Y-m-d')){
-                        if($dy_interest<=$payment['rental_amount']){
-                            $dy_Interest += $dy_interest;
-                        }
-                        else{
-                            $dy_Interest += $payment['rental_amount'];
-                        }
-                    } 
-                    
-                }
+                }       
             }
-        //} 
-        
-        $total_arrears += $borrower['total_arrears'];
-        
+        }
+        $total_arrears += $borrower['total_arrears'];   
     }
 }
 $sql_payment = "SELECT * FROM payments";
@@ -236,11 +232,6 @@ while($emp = $result_employee->fetch_assoc()){
     $all_privision += $emp['privision'];
 }
 
-
-
-// Close the database connection
-
-
 ?>
 
 <!DOCTYPE html>
@@ -250,6 +241,7 @@ while($emp = $result_employee->fetch_assoc()){
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link rel="stylesheet" href="./css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="header1">
@@ -271,30 +263,315 @@ while($emp = $result_employee->fetch_assoc()){
             </nav>
         </div>
 
-        <!-- Create chart -->
+        <!-- Details-->
         <div class="chart-temp">
             <div class="card1">
                 <div class="card1-2">
                     <h4>CURRENT STOCK</h4>
-                    <h3>Rs. <?php echo number_format($allInvest-($all_paid-$dyInterest)+($totalAgreValu-$allInvest) - ($dyInterest), 2); ?></h3> <!-- Agree value minus payments made -->
+                    <h3>Rs. <?php echo number_format($allInvest-($all_paid-$dyInterest)+($totalAgreValu-$allInvest) - ($dyInterest), 2); ?></h3> 
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE CAPITAL</h4>
-                    <h3>Rs. <?php echo number_format($allInvest-($all_paid-$dyInterest), 2); ?></h3> <!-- Total investment minus capital -->
+                    <h3>Rs. <?php echo number_format($allInvest-($all_paid-$dyInterest), 2); ?></h3> 
                 </div>
                 <div class="card1-2">
                     <h4>FUTURE INTEREST</h4>
-                    <h3>Rs. <?php echo number_format(($totalAgreValu-$allInvest) - ($dyInterest), 2); ?></h3> <!-- Total future interest -->
+                    <h3>Rs. <?php echo number_format(($totalAgreValu-$allInvest) - ($dyInterest), 2); ?></h3> 
                 </div>
                 <div class="card1-2">
                     <h4>TOTAL ARIARS</h4>
-                    <h3>Rs. <?php echo number_format($total_arrears, 2); ?></h3> <!-- Daily interest -->
-                </div>
-                <div class="card1-2">
-                    <h4>DAILY INTEREST</h4>
-                    <h3>Rs. <?php echo number_format($dy_Interest, 2); ?></h3> <!-- Daily interest -->
-                </div>
+                    <h3>Rs. <?php echo number_format($total_arrears, 2); ?></h3> 
+                </div>    
             </div>
+            
+            <!--Create chart-->
+
+            <div style="width: 75%; margin:auto ;">
+                <h2 style="text-align: center; font-family: Arial, sans-serif;">Capital Saving, New Loan, and Stocks Over Time</h2>
+                <canvas id="myChart"></canvas>
+            </div>
+
+            <script>
+                async function fetchMonthlyDetails() {
+                    const response = await fetch('getMonthlyDetails.php'); 
+                    const data = await response.json();
+                    return data;
+                }
+
+                // Initialize the chart with empty data
+                const ctx = document.getElementById('myChart').getContext('2d');
+                const myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [], // X-axis labels will be months
+                        datasets: [
+                            {
+                                label: 'Capital Saving',
+                                data: [],
+                                borderColor: 'blue',
+                                backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                                fill: false,
+                                tension: 0,  // Set tension to 0 for straight lines
+                                pointRadius: 5,
+                                pointBackgroundColor: 'blue',
+                                pointBorderColor: 'black',
+                                pointStyle: 'circle',
+                                borderWidth: 2,
+                            },
+                            {
+                                label: 'New Loan',
+                                data: [],
+                                borderColor: 'magenta',
+                                backgroundColor: 'rgba(255, 0, 255, 0.1)',
+                                fill: false,
+                                tension: 0,  // Set tension to 0 for straight lines
+                                pointRadius: 5,
+                                pointBackgroundColor: 'magenta',
+                                pointBorderColor: 'black',
+                                pointStyle: 'circle',
+                                borderWidth: 2,
+                            },
+                            {
+                                label: 'Stocks',
+                                data: [],
+                                borderColor: 'yellow',
+                                backgroundColor: 'rgba(255, 255, 0, 0.1)',
+                                fill: false,
+                                tension: 0,  // Set tension to 0 for straight lines
+                                pointRadius: 5,
+                                pointBackgroundColor: 'yellow',
+                                pointBorderColor: 'black',
+                                pointStyle: 'circle',
+                                borderWidth: 2,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString('en-US', { style: 'currency', currency: 'LKR' });
+                                    }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw.toLocaleString('en-US', { style: 'currency', currency: 'LKR' });
+                                    }   
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Function to update the chart with real data
+                async function updateChart() {
+                    const data = await fetchMonthlyDetails();
+
+                    myChart.data.labels = data.map(item => item.month); // Set months on X-axis
+                    myChart.data.datasets[0].data = data.map(item => item.capital_saving); // Capital Saving data
+                    myChart.data.datasets[1].data = data.map(item => item.new_loan);       // New Loan data
+                    myChart.data.datasets[2].data = data.map(item => item.total_stocks);   // Stocks data
+
+                    myChart.update();
+                }
+                updateChart();
+                setInterval(updateChart, 5000);
+            </script>
+
+
+            <!--collection and income chart-->
+            <h2 style="text-align: center; font-family: Arial, sans-serif;">Collection,Income</h2>
+            <div style="width: 75%; margin: auto;">
+                <canvas id="minChart"></canvas>
+            </div>
+
+            <script>
+                async function fetchMonthlyDetail() {
+                    const response = await fetch('collection.php'); // PHP endpoint
+                    const data = await response.json();
+                    return data;
+                }
+
+        
+                const ctxx = document.getElementById('minChart').getContext('2d');
+                const minChart = new Chart(ctxx, {
+                    type: 'line',
+                    data: {
+                        labels: [], // X-axis labels will be months
+                        datasets: [
+                            {
+                            label: 'Collection',
+                            data: [],
+                            borderColor: 'blue',
+                            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 5,
+                            pointBackgroundColor: 'blue',
+                            pointBorderColor: 'black',
+                            pointStyle: 'circle',
+                            borderWidth: 2,
+                            },
+                            {
+                            label: 'Income',
+                            data: [],
+                            borderColor: 'magenta',
+                            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 5,
+                            pointBackgroundColor: 'magenta',
+                            pointBorderColor: 'black',
+                            pointStyle: 'circle',
+                            borderWidth: 2,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString('en-US', { style: 'currency', currency: 'LKR' });
+                                    }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw.toLocaleString('en-US', { style: 'currency', currency: 'LKR' });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                async function updateChart(){
+                    const data = await fetchMonthlyDetail();
+                    minChart.data.labels = data.map(item => item.month).reverse(); // Set months on X-axis
+                    minChart.data.datasets[0].data = data.map(item => item.monthly_payment_sum).reverse();
+                    minChart.data.datasets[1].data = data.map(item => item.interest_received).reverse();
+                    minChart.update();
+                }
+                updateChart();
+                setInterval(updateChart, 5000);
+            </script>
+
+            <!--Percentage chart-->
+            <h2 style="text-align: center; font-family: Arial, sans-serif;">Stock Increase Percentage</h2>
+            <div style="width: 75%; margin: auto;">
+                <canvas id="mineChart"></canvas>
+            </div>
+
+            <script>
+                async function fetchMonthlyDetailss() {
+                    const response = await fetch('getMonthlyDetails.php'); // PHP endpoint
+                    const data = await response.json();
+                    return data;
+                }
+
+                const ctxxx = document.getElementById('mineChart').getContext('2d');
+                const mineChart = new Chart(ctxxx, {
+                    type: 'line',
+                    data: {
+                        labels: [], // X-axis labels will be months
+                        datasets: [
+                            {
+                                label: 'Stock Increase (%)',
+                                data: [],
+                                borderColor: 'magenta',
+                                backgroundColor: 'rgba(255, 255, 0, 0.1)',
+                                fill: false,
+                                tension: 0, // Smooth curve for line
+                                pointRadius: 5,
+                                pointBackgroundColor: 'magenta',
+                                pointBorderColor: 'black',
+                                pointStyle: 'circle',
+                                borderWidth: 2,
+                            }
+                        ]       
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw.toFixed(2) + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                async function updateChart() {
+                const data = await fetchMonthlyDetailss();
+
+                    // Map the data into chart format
+                    mineChart.data.labels = data.map(item => item.month).reverse(); // Set months on X-axis
+                    mineChart.data.datasets[0].data = data.map(item => item.stock_increase_percentage).reverse(); // Set percentages
+                    mineChart.update();
+                }
+                updateChart();
+                setInterval(updateChart, 5000);
+            </script>
         </div>
 
         <!-- Dashboard details -->
@@ -315,13 +592,19 @@ while($emp = $result_employee->fetch_assoc()){
             <h3>Profit:&nbsp; Rs. <?php echo number_format($dyInterest-$all_salary-$all_allowance-$all_privision, 2); ?></h3>
             <hr>   
         </div>
+
+        
     </div>
+
+   
+        
 
     <script>
     setTimeout(function() {
         location.reload();
-    }, 30000);  // Refresh every 30 seconds
-</script>
+    }, 300000);  // Refresh every 30 seconds
+    </script>
+
 
 </body>
 </html>
