@@ -132,13 +132,13 @@ $all_interest=0;
 $day_interest=0;
 $dy_Interest=0;
 // Fetch all borrowers from the database
-$sql = "SELECT * FROM borrowers";
-$result = $conn->query($sql);
+$sql_borrowers = "SELECT * FROM borrowers";
+$result_borrowers = $conn->query($sql_borrowers);
 
 
 // Check if there are any results
-if ($result && $result->num_rows > 0) {
-    while ($borrower = $result->fetch_assoc()) {
+if ($result_borrowers && $result_borrowers->num_rows > 0) {
+    while ($borrower = $result_borrowers->fetch_assoc()) {
 
         $id = $borrower['id'];
         $due_date = $borrower['due_date'];
@@ -223,15 +223,28 @@ if ($result_customer->num_rows > 0) {
 
 $sql_employee = "SELECT * FROM employee_details";
 $result_employee = $conn->  query($sql_employee);
-$all_salary =0;
-$all_allowance =0;
-$all_privision =0;
+$all_payed_salary =0;
+$all_payed_allowance =0;
+$all_payed_privision =0;
+$all_payed_profit =0;
 while($emp = $result_employee->fetch_assoc()){
-    $all_salary += $emp['salary'];
-    $all_allowance += $emp['allownce'];
-    $all_privision += $emp['privision'];
+    $all_payed_salary += $emp['salary'];
+    $all_payed_allowance += $emp['allownce'];
+    $all_payed_privision += $emp['privision'];
 }
 
+$sql_employee_details = "SELECT * FROM monthly_details";
+$result_monthly_emp_details = $conn-> query($sql_employee_details);
+$all_allowance=0;
+$all_salary=0;
+$all_privision=0;
+while($emp_details = $result_monthly_emp_details->fetch_assoc()){
+    $all_allowance += $emp_details['interest2']; 
+    $all_salary += $emp_details['interest1']; 
+    $all_privision += $emp_details['interest3']; 
+}
+
+$all_payed_profit=$dyInterest-$all_salary-$all_allowance-$all_privision;
 ?>
 
 <!DOCTYPE html>
@@ -252,7 +265,6 @@ while($emp = $result_employee->fetch_assoc()){
             <nav>
                 <ul>
                     <li><a href="./add_borrower.php">Add Borrower</a></li>
-                    <li><a href="./barrowBasic.php">Borrower List</a></li>
                     <li><a href="./collect_amount.php">Collect Amount</a></li>
                     <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
@@ -392,7 +404,6 @@ while($emp = $result_employee->fetch_assoc()){
                     myChart.update();
                 }
                 updateChart();
-                setInterval(updateChart, 5000);
             </script>
 
 
@@ -486,92 +497,90 @@ while($emp = $result_employee->fetch_assoc()){
                     minChart.update();
                 }
                 updateChart();
-                setInterval(updateChart, 5000);
+                //setInterval(updateChart, 5000);
             </script>
 
             <!--Percentage chart-->
+            
             <h2 style="text-align: center; font-family: Arial, sans-serif;">Stock Increase Percentage</h2>
-            <div style="width: 75%; margin: auto;">
-                <canvas id="mineChart"></canvas>
+            <div style="width: 75%;height:350px; margin: auto;">
+                <canvas id="chart-container"></canvas>
             </div>
 
             <script>
-                async function fetchMonthlyDetailss() {
-                    const response = await fetch('getMonthlyDetails.php'); // PHP endpoint
-                    const data = await response.json();
-                    return data;
+                const chartCanvas = document.getElementById('chart-container');
+                let chart;
+
+                function fetchData() {
+                    fetch('data_.php')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!chart) {
+                            initChart(data);
+                        } else {
+                            updateChart(data);
+                        }
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
                 }
 
-                const ctxxx = document.getElementById('mineChart').getContext('2d');
-                const mineChart = new Chart(ctxxx, {
-                    type: 'line',
-                    data: {
-                        labels: [], // X-axis labels will be months
-                        datasets: [
-                            {
+                function initChart(data) {
+                    chart = new Chart(chartCanvas, {
+                        type: 'line',
+                        data: {
+                            labels: data.map(item => item.month),
+                            datasets: [{
                                 label: 'Stock Increase (%)',
-                                data: [],
-                                borderColor: 'magenta',
-                                backgroundColor: 'rgba(255, 255, 0, 0.1)',
+                                data: data.map(item => item.stock_increase_percentage),
+                                label: 'Collection',
+                                borderColor: 'blue',
+                                backgroundColor: 'rgba(0, 0, 255, 0.1)',
                                 fill: false,
-                                tension: 0, // Smooth curve for line
+                                tension: 0,
                                 pointRadius: 5,
-                                pointBackgroundColor: 'magenta',
+                                pointBackgroundColor: 'blue',
                                 pointBorderColor: 'black',
                                 pointStyle: 'circle',
                                 borderWidth: 2,
-                            }
-                        ]       
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value + '%';
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Month'
                                     }
                                 },
-                                title: {
-                                    display: true,
-                                    text: 'Percentage (%)'
-                                }
-                            },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Month'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.dataset.label + ': ' + context.raw.toFixed(2) + '%';
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Percentage'
                                     }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
                                 }
                             }
                         }
-                    }
-                });
-
-                async function updateChart() {
-                const data = await fetchMonthlyDetailss();
-
-                    // Map the data into chart format
-                    mineChart.data.labels = data.map(item => item.month).reverse(); // Set months on X-axis
-                    mineChart.data.datasets[0].data = data.map(item => item.stock_increase_percentage).reverse(); // Set percentages
-                    mineChart.update();
+                    });
                 }
-                updateChart();
-                setInterval(updateChart, 5000);
+
+                function updateChart(data) {
+                    chart.data.labels = data.map(item => item.month);
+                    chart.data.datasets[0].data = data.map(item => item.stock_increase_percentage);
+                    chart.update();
+                }
+                fetchData();
+                //setInterval(fetchData, 100); // Fetch data every 5 seconds
+    
             </script>
+ 
         </div>
 
         <!-- Dashboard details -->
@@ -586,28 +595,244 @@ while($emp = $result_employee->fetch_assoc()){
             <h3>Collect capital: Rs. <?php echo number_format($all_paid-$dyInterest, 2); ?></h3>
             <h3>Collect Interest: Rs. <?php echo number_format($dyInterest, 2); ?></h3>
             <hr>
-            <h3>Salary:&nbsp; Rs. <?php echo number_format($all_salary, 2); ?></h3>
-            <h3>Allowance:&nbsp; Rs. <?php echo number_format($all_allowance, 2); ?></h3>
-            <h3>Privision:&nbsp; Rs. <?php echo number_format($all_privision, 2); ?></h3>
-            <h3>Profit:&nbsp; Rs. <?php echo number_format($dyInterest-$all_salary-$all_allowance-$all_privision, 2); ?></h3>
-            <hr>   
+            <h3>All Salary:&nbsp; Rs. <?php echo number_format($all_salary, 2); ?></h3>
+            <h3>All Allowance:&nbsp; Rs. <?php echo number_format($all_allowance, 2); ?></h3>
+            <h3>All Privision:&nbsp; Rs. <?php echo number_format($all_privision, 2); ?></h3>
+            <h3>All Profit:&nbsp; Rs. <?php echo number_format($all_payed_profit, 2); ?></h3>
+            <hr>
+            <h3>Payed Salary:&nbsp; Rs. <?php echo number_format($all_payed_salary, 2); ?></h3>
+            <h3>Payed Allowance:&nbsp; Rs. <?php echo number_format($all_payed_allowance, 2); ?></h3>
+            <h3>Payed Privision:&nbsp; Rs. <?php echo number_format($all_payed_privision, 2); ?></h3>
+            <h3>Payed Profit:&nbsp; Rs. <?php echo number_format($dyInterest-$all_salary-$all_allowance-$all_privision, 2); ?></h3>
+            <hr>
+            <h3>FutureSalary:&nbsp; Rs. <?php echo number_format($all_salary-$all_payed_salary, 2); ?></h3>
+            <h3>Future Allowance:&nbsp; Rs. <?php echo number_format($all_allowance-$all_payed_allowance, 2); ?></h3>
+            <h3>Future Privision:&nbsp; Rs. <?php echo number_format($all_privision-$all_payed_privision, 2); ?></h3>
+            <h3>Payed Profit:&nbsp; Rs. <?php echo number_format($dyInterest-$all_salary-$all_allowance-$all_privision, 2); ?></h3>
+            <hr>
         </div>
 
-        
     </div>
-
-   
-        
-
-    <script>
-    setTimeout(function() {
-        location.reload();
-    }, 300000);  // Refresh every 30 seconds
-    </script>
-
-
 </body>
 </html>
+
+<?php
+$selected_year = isset($_GET['year']) ? intval($_GET['year']) : date("Y");
+        // Define yesterday’s date for calculations in the current month
+        $current_date = date("Y-m-d");
+        $yesterday_date = date("Y-m-d", strtotime('-1 day'));
+        $current_month_start = date("Y-m-01");
+
+        // SQL query to calculate total monthly payment, monthly payment sum, and count payments per month
+        $sql = "SELECT 
+                DATE_FORMAT(months.date, '%Y/%M') AS month,
+    
+                -- Calculate Total Monthly Payment as before
+                SUM(
+                    CASE 
+                        WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE())
+                            THEN 
+                                GREATEST(0, DATEDIFF(LEAST(DATE_SUB(CURDATE(), INTERVAL 1 DAY), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.rental
+                        WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date)
+                            THEN (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.rental
+                        WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date)
+                            THEN DAY(b.due_date) * b.rental
+                        ELSE DAY(LAST_DAY(months.date)) * b.rental
+                    END
+                ) AS total_monthly_payment,
+
+                COALESCE(p_data.monthly_payment_sum, 0) AS monthly_payment_sum,
+                COALESCE(p_data.payment_count, 0) AS payment_count,
+
+                -- Calculate Total Interest to be Received for the month
+                SUM(
+                    CASE 
+                        WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE())
+                            THEN GREATEST(0, DATEDIFF(LEAST(DATE_SUB(CURDATE(), INTERVAL 1 DAY), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.interest_day
+                        WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date)
+                            THEN (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.interest_day
+                        WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date)
+                            THEN DAY(b.due_date) * b.interest_day
+                        ELSE DAY(LAST_DAY(months.date)) * b.interest_day
+                    END
+                ) AS total_interest_to_be_received
+
+                FROM 
+                    borrowers b
+                CROSS JOIN (
+                            SELECT DATE_FORMAT(DATE_ADD('$selected_year-01-01', INTERVAL n MONTH), '%Y-%m-01') AS date
+                            FROM (
+                                SELECT @row := @row + 1 AS n
+                                FROM (SELECT 0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 
+                                    UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 
+                                    UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS x,
+                                (SELECT @row := -1) AS r
+                            ) AS nums
+                ) AS months
+                LEFT JOIN (
+                        SELECT 
+                            DATE_FORMAT(payment_date, '%Y/%M') AS payment_month,
+                            SUM(rental_amount) AS monthly_payment_sum,
+                            COUNT(rental_amount) AS payment_count
+                        FROM 
+                            payments
+                        WHERE 
+                            YEAR(payment_date) = $selected_year
+                        GROUP BY 
+                            DATE_FORMAT(payment_date, '%Y/%m')
+                ) AS p_data ON DATE_FORMAT(months.date, '%Y/%M') = p_data.payment_month
+                WHERE 
+                    YEAR(months.date) = $selected_year
+                    AND months.date BETWEEN DATE_FORMAT(b.lone_date, '%Y-%m-01') AND DATE_FORMAT(b.due_date, '%Y-%m-01')
+                    AND months.date <= LAST_DAY(CURDATE())
+                GROUP BY month
+                ORDER BY months.date DESC;
+        ";
+
+        $result = $conn->query($sql);
+
+
+        while ($row = $result->fetch_assoc()) {
+            // Retrieve payments for the specific month to calculate Interest Received
+            $monthly_payment_Interest = 0;
+
+            // SQL to get each payment with associated borrower's interest_day and rental_amount for the selected month
+            $payment_query = "SELECT p.rental_amount, p.payment_date, b.interest_day
+                            FROM payments p
+                            JOIN borrowers b ON p.borrower_id = b.id
+                            WHERE DATE_FORMAT(p.payment_date, '%Y/%M') = '" . $row['month'] . "'";
+
+            $payment_result = $conn->query($payment_query);
+
+            if ($payment_result && $payment_result->num_rows > 0) {
+                while ($payment = $payment_result->fetch_assoc()) {
+                    // Calculate interest based on the given logic
+                    if ($payment['interest_day'] <= $payment['rental_amount']) {
+                        $monthly_payment_Interest += $payment['interest_day'];
+                    } else {
+                        $monthly_payment_Interest += $payment['rental_amount'];
+                    }
+                }
+            }
+
+            // Check if the month already exists in the monthly_details table
+            $check_query = "SELECT id FROM monthly_details WHERE month = '" . $row['month'] . "'";
+            $check_result = $conn->query($check_query);
+
+            $arrears = $row['total_monthly_payment'] - $row['monthly_payment_sum'];
+            $capital_received =$row['monthly_payment_sum']-$monthly_payment_Interest;
+            $total_capital =$row['total_monthly_payment']-$row['total_interest_to_be_received'];
+
+            // If the month already exists, update the existing row
+            if ($check_result->num_rows > 0) {
+                $update_query = "UPDATE monthly_details 
+                    SET payment_count = " . $row['payment_count'] . ", 
+                        total_monthly_payment = " . $row['total_monthly_payment'] . ", 
+                        total_interest_to_be_received = " . $row['total_interest_to_be_received'] . ", 
+                        monthly_payment_sum = " . $row['monthly_payment_sum'] . ", 
+                        interest_received = " . $monthly_payment_Interest . ", 
+                        arrears = " . $arrears . " ,
+                        total_month_capital =".$total_capital.",
+                        capital_received =".$capital_received."
+                        WHERE month = '" . $row['month'] . "'";
+                $conn->query($update_query);
+            } else {
+                // If the month does not exist, insert a new row
+                $insert_query = "INSERT INTO monthly_details (month, payment_count, total_monthly_payment,             total_interest_to_be_received, monthly_payment_sum, interest_received, arrears,total_month_capital,capital_received)
+                                VALUES ('" . $row['month'] . "', " . $row['payment_count'] . ", " . $row['total_monthly_payment'] . ", " . $row['total_interest_to_be_received'] . ", " . $row['monthly_payment_sum'] . ", " . $monthly_payment_Interest . ", " . $arrears . ",".$total_capital.",".$capital_received.")";
+                $conn->query($insert_query);
+            }
+        }
+?>
+
+
+<?php
+$sql_summary = "SELECT 
+curr.month AS current_month,
+curr.capital_received AS capital_received, 
+IFNULL(prev.capital_received, 0) AS previous_month_capital_received,
+(SELECT IFNULL(SUM(b.amount), 0) 
+ FROM borrowers AS b 
+ WHERE DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d'), '%Y-%m') = DATE_FORMAT(b.lone_date, '%Y-%m')
+) AS total_amount_for_month,
+curr.id AS monthly_details_id
+FROM 
+monthly_details AS curr
+LEFT JOIN 
+monthly_details AS prev 
+ON 
+DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') - INTERVAL 1 MONTH, '%Y/%M') = prev.month
+ORDER BY 
+STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') ASC";
+
+// Execute the query
+$result_summary = $conn->query($sql_summary);
+if (!$result_summary) {
+die("Error in query: " . $conn->error);
+}
+
+// Initialize the total stocks variable and previous stock variable
+$total_stocks = 0;
+$previous_stock = 0;
+
+// Get the current month and year
+$current_month = date("Y/m");
+
+// Automatically set updated month to current month
+$updated_month = $current_month;
+
+// Convert updated month to a DateTime object for accurate comparison
+$updated_date = DateTime::createFromFormat('Y/m', trim($updated_month));
+
+
+
+while ($row = $result_summary->fetch_assoc()) {
+    // Retrieve and format the month for the current row
+    $row_month_str = trim($row['current_month']);
+    $row_month_date = DateTime::createFromFormat('Y/F', $row_month_str);
+    if (!$row_month_date) {
+        continue;
+    }
+    $row_month = $row_month_date->format('Y/F');
+
+    // Retrieve necessary fields
+    $capital_received = (float)$row['capital_received'];
+    $previous_capital_received = (float)$row['previous_month_capital_received'];
+    $new_loan = (float)$row['total_amount_for_month'];
+
+    // Calculate capital saving and new saving
+    $capital_saving = ($new_loan >= $previous_capital_received) ? $previous_capital_received : $new_loan;
+    $new_saving = max(0, $new_loan - $capital_saving);
+
+    // Apply the updated formula for the current month or the updated month only
+    if ($row_month === $current_month) {
+        $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
+    } elseif ($row_month === $updated_date->format('Y/m')) {
+        $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
+    } else {
+        $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving;
+    }
+
+    // Calculate stock increase percentage
+    $stock_increes = ($new_loan > 0) ? ($total_stocks - $previous_stock) / $new_loan * 100 : 0;
+    // Insert or update data into the monthly_savings table
+    $stmt = $conn->prepare("INSERT INTO monthly_savings (month, capital_saving, new_saving, new_loan, stock_increase_percentage, total_stocks, monthly_details_id)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE
+                            capital_saving = VALUES(capital_saving), 
+                            new_saving = VALUES(new_saving),
+                            new_loan = VALUES(new_loan),
+                            stock_increase_percentage = VALUES(stock_increase_percentage),
+                            total_stocks = VALUES(total_stocks)");
+    $stmt->bind_param("ssssdds", $row['current_month'], $capital_saving, $new_saving, $new_loan, $stock_increes, $total_stocks, $row['monthly_details_id']);
+    $stmt->execute();
+    $stmt->close();
+
+    // Update previous_stock for the next iteration
+    $previous_stock = $total_stocks;
+}
+?>
+
 <?php
 $conn->close();
 ?>

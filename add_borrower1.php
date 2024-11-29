@@ -28,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $agree_value = $rental * $no_rental;
 
     $date = new DateTime($lone_date);
-    $date->modify("+$no_rental days");
+    $date->modify("+".($no_rental - 1)." days");
     $due_date = $date->format('Y-m-d');
 
     $interest = $agree_value - $amount;

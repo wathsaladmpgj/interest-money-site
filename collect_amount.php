@@ -10,59 +10,66 @@
     <h2>Add Payment Details</h2>
     
     <form action="./collect_amount1.php" method="post">
-    <label for="showName">Select Name</label><br>
-<input type="text" id="nameInput" placeholder="Type to search..."><br><br>
-<select name="showName" id="showName" required autocomplete="off">
-    <?php 
-    // Connect to the database
-    $conn = new mysqli('localhost', 'root', '', 'interest');
-    $conn = new mysqli('localhost', getenv('root'),'',getenv(''), 'interest');
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
+        <label for="showName">Select Name</label><br>
+        <input type="text" id="nameInput" placeholder="Type to search..."><br><br>
+        <select name="showName" id="showName" required autocomplete="off">
+            <?php 
+                $conn = new mysqli('localhost', 'root', '', 'interest');
+                if ($conn->connect_error) {
+                    die("Connection failed: " . $conn->connect_error);
+                }
 
-    // Fetch names of borrowers whose due_date is today or later
-    $sql = "SELECT id, name FROM borrowers"; // WHERE due_date >= CURDATE()
-    $result = $conn->query($sql);
+                // Fetch borrower names
+                $sql = "SELECT id, name FROM borrowers";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute();
+                $result = $stmt->get_result();
 
-    if ($result->num_rows > 0) {
-        // Loop through each row and create an option element
-        while ($row = $result->fetch_assoc()) {
-            echo "<option value='".htmlspecialchars($row['id'])."'>".htmlspecialchars($row['name'])."</option>";
-        }
-    } else {
-        echo "<option>No Name available</option>";
-    }
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<option value='".htmlspecialchars($row['id'], ENT_QUOTES)."'>".htmlspecialchars($row['name'], ENT_QUOTES)."</option>";
+                    }
+                } else {
+                    echo "<option>No Name Available</option>";
+                }
 
-    $conn->close();
-    ?>
-</select><br><br>
+                $stmt->close();
+                $conn->close();
+            ?>
+        </select>
+        <p id="noResults" style="display:none; color:red;">No matching names found</p><br><br>
 
-<script>
-    const input = document.getElementById('nameInput');
-    const select = document.getElementById('showName');
+        <script>
+            const input = document.getElementById('nameInput');
+            const select = document.getElementById('showName');
+            const noResults = document.getElementById('noResults');
 
-    input.addEventListener('input', function() {
-        const filter = input.value.toLowerCase();
-        const options = select.options;
+            input.addEventListener('input', function() {
+                const filter = input.value.toLowerCase();
+                const options = select.options;
+                let matchFound = false;
 
-        // Loop through the options and hide those that don't match
-        for (let i = 0; i < options.length; i++) {
-            const name = options[i].text.toLowerCase();
-            options[i].style.display = name.includes(filter) ? '' : 'none';
-        }
+                for (let i = 0; i < options.length; i++) {
+                    const name = options[i].text.toLowerCase();
+                    if (name.includes(filter)) {
+                        options[i].style.display = '';
+                        matchFound = true;
+                    } else {
+                        options[i].style.display = 'none';
+                    }
+                }
 
-        // If there's a match, select the first matching option
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].style.display !== 'none') {
-                select.selectedIndex = i; // Select the matching option
-                break;
-            }
-        }
-    });
-</script>
+                noResults.style.display = matchFound ? 'none' : 'block';
 
-        </select><br><br>
+                // Automatically select the first visible option
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].style.display !== 'none') {
+                        select.selectedIndex = i;
+                        break;
+                    }
+                }
+            });
+        </script>
 
         <label for="du_date">Due Date</label><br>
         <input type="date" id="du_date" name="du_date" required autocomplete="off"><br><br>
@@ -74,16 +81,7 @@
         <input type="number" id="payment" name="payment" step="0.01" required autocomplete="off"><br><br>
 
         <input type="submit" value="Add Payment">
-        <button type="button" onclick="goBack()">Back</button> <!-- Back button -->
+        <button type="button" onclick="window.location.href='home.php'">Back</button>
     </form>
-
-    <script>
-        function goBack() {
-            window.history.back(); // Go back to the previous page
-        }
-    </script>
-
-
-
 </body>
 </html>

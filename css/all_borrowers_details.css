@@ -47,7 +47,9 @@ td {
     color: #555;
     text-align: right;
 }
-
+a{
+    text-decoration: none;
+}
 
 
 .finished {
@@ -115,3 +117,26 @@ button:active {
     }
 }
 
+/*=====================================================*/
+.filter-buttons {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.filter-buttons button {
+    margin: 5px;
+    padding: 10px 20px;
+    border: none;
+    background-color: #007BFF;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.filter-buttons button:hover {
+    background-color: #0056b3;
+}
+
+.hidden {
+    display: none;
+}

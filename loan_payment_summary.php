@@ -15,21 +15,22 @@ if ($conn->connect_error) {
 
 // Query to select each month, the previous month's capital_received, and the sum of amounts for the month
 $sql = "SELECT 
-        curr.month AS current_month,
-        IFNULL(prev.capital_received, 0) AS previous_month_capital_received,
-        (SELECT IFNULL(SUM(b.amount), 0) 
-         FROM borrowers AS b 
-         WHERE DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d'), '%Y-%m') = DATE_FORMAT(b.lone_date, '%Y-%m')
-        ) AS total_amount_for_month
-    FROM 
-        monthly_details AS curr
-    LEFT JOIN 
-        monthly_details AS prev 
-    ON 
-        DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') - INTERVAL 1 MONTH, '%Y/%M') = prev.month
-    ORDER BY 
-        STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') ASC;
-";
+    curr.month AS current_month,
+    curr.capital_received AS capital_received, 
+    IFNULL(prev.capital_received, 0) AS previous_month_capital_received,
+    (SELECT IFNULL(SUM(b.amount), 0) 
+     FROM borrowers AS b 
+     WHERE DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d'), '%Y-%m') = DATE_FORMAT(b.lone_date, '%Y-%m')
+    ) AS total_amount_for_month,
+    curr.id AS monthly_details_id
+FROM 
+    monthly_details AS curr
+LEFT JOIN 
+    monthly_details AS prev 
+ON 
+    DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') - INTERVAL 1 MONTH, '%Y/%M') = prev.month
+ORDER BY 
+    STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') ASC";
 
 // Execute the query
 $result = $conn->query($sql);
@@ -39,7 +40,16 @@ if (!$result) {
 
 // Initialize the total stocks variable and previous stock variable
 $total_stocks = 0;
-$previous_stock = 0; // Store previous month's stock
+$previous_stock = 0;
+
+// Get the current month and year
+$current_month = date("Y/m");
+
+// Automatically set updated month to current month
+$updated_month = $current_month;
+
+// Convert updated month to a DateTime object for accurate comparison
+$updated_date = DateTime::createFromFormat('Y/m', trim($updated_month));
 
 ?>
 
@@ -49,13 +59,13 @@ $previous_stock = 0; // Store previous month's stock
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loan Payment Summary</title>
-    <link rel="stylesheet" href="./css/loan_payment_summary.css">
+    <!-- Link to internal CSS styling -->
+     <link rel="stylesheet" href="./css/month_summary.css">
 </head>
 <body>
 
 <h2>Loan Payment Summary</h2>
 
-<!-- Table container -->
 <div class="table-container">
     <table>
         <tr>
@@ -70,51 +80,66 @@ $previous_stock = 0; // Store previous month's stock
         <?php
         // Loop through each row from the result
         while ($row = $result->fetch_assoc()) {
-            // Previous month's capital received
+            // Retrieve and format the month for the current row
+            $row_month_str = trim($row['current_month']);
+            $row_month_date = DateTime::createFromFormat('Y/F', $row_month_str);
+            if (!$row_month_date) {
+                continue;
+            }
+            $row_month = $row_month_date->format('Y/F');
+
+            // Retrieve necessary fields
+            $capital_received = (float)$row['capital_received'];
             $previous_capital_received = (float)$row['previous_month_capital_received'];
-            
-            // Current month's total loan amount
             $new_loan = (float)$row['total_amount_for_month'];
 
-            // Capital saving assignment
+            // Calculate capital saving and new saving
             $capital_saving = ($new_loan >= $previous_capital_received) ? $previous_capital_received : $new_loan;
-
-            // Calculate new saving and stock increase percentage
             $new_saving = max(0, $new_loan - $capital_saving);
-            //$stock_increes = ($new_loan > 0) ? ($new_saving / $new_loan) * 100 : 0;
-            
-            // Update total stocks based on new saving and previous capital received
-            $total_stocks += ($new_saving > 0) ? $new_saving : -$previous_capital_received;
 
-            $stock_increes =($new_loan > 0) ? ($total_stocks-$previous_stock)/$new_loan*100:0;
-            
+            // Apply the updated formula for the current month or the updated month only
+            if ($row_month === $current_month) {
+                $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
+            } elseif ($row_month === $updated_date->format('Y/m')) {
+                $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
+            } else {
+                $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving;
+            }
+
+            // Calculate stock increase percentage
+            $stock_increes = ($new_loan > 0) ? ($total_stocks - $previous_stock) / $new_loan * 100 : 0;
+
             // Display the row
             ?>
             <tr>
-                <td><?php echo $row['current_month']; ?></td>
+                <td><?php echo $row_month; ?></td>
                 <td><?php echo number_format($capital_saving, 2); ?></td>
                 <td><?php echo number_format($new_saving, 2); ?></td>
                 <td><?php echo number_format($new_loan, 2); ?></td>
                 <td><?php echo number_format($stock_increes, 2); ?>%</td>
                 <td><?php echo number_format($total_stocks, 2); ?></td>
             </tr>
-            
             <?php
-            // Update previous_stock with the current month's total_stocks for the next iteration
+            // Insert or update data into the monthly_savings table
+            $stmt = $conn->prepare("INSERT INTO monthly_savings (month, capital_saving, new_saving, new_loan, stock_increase_percentage, total_stocks, monthly_details_id)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                    ON DUPLICATE KEY UPDATE
+                                    capital_saving = VALUES(capital_saving), 
+                                    new_saving = VALUES(new_saving),
+                                    new_loan = VALUES(new_loan),
+                                    stock_increase_percentage = VALUES(stock_increase_percentage),
+                                    total_stocks = VALUES(total_stocks)");
+            $stmt->bind_param("ssssdds", $row['current_month'], $capital_saving, $new_saving, $new_loan, $stock_increes, $total_stocks, $row['monthly_details_id']);
+            $stmt->execute();
+            $stmt->close();
+
+            // Update previous_stock for the next iteration
             $previous_stock = $total_stocks;
         }
         ?>
 
     </table>
 </div>
-
-<!-- JavaScript for auto-reloading the page every 30 seconds -->
-<script>
-    setTimeout(function() {
-        location.reload();
-    }, 30000);  // Refresh every 30 seconds
-</script>
-
 </body>
 </html>
 

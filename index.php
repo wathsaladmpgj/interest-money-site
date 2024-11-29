@@ -19,7 +19,7 @@
     }
 
     // Call updatePayments() every 5 minutes (300000 milliseconds)
-    setInterval(updatePayments, 300000);
+    //setInterval(updatePayments, 300000);
 </script>
 
 </body>

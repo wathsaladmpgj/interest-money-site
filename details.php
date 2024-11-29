@@ -85,7 +85,7 @@ $days_difference = $interval->days;
 
 // Create an array of days starting from the day after the loan date
 $calendar_dates = [];
-for ($i = 1; $i <= $days_difference; $i++) {
+for ($i = 0; $i <= $days_difference; $i++) {
     $loan_date_clone = clone $loan_date;
     $loan_date_clone->modify("+$i day");
     $calendar_dates[] = $loan_date_clone;
@@ -145,7 +145,7 @@ function payment_made($date, $paid_dates) {
         <tr class="<?php
             if (payment_made($date, $paid_dates)) {
                 echo 'paid';
-            } elseif ($date <= $yesterday) {
+            } elseif ($date <= $today) {
                 echo 'overdue';
             } else {
                 echo 'future';
@@ -158,7 +158,7 @@ function payment_made($date, $paid_dates) {
             <td><?php
             if (payment_made($date, $paid_dates)) {
                 echo 'Paid';
-            } elseif ($date <= $yesterday) {
+            } elseif ($date <= $today) {
                 echo 'Overdue';
             } else {
                 echo 'Not Due Yet';
@@ -177,7 +177,7 @@ function payment_made($date, $paid_dates) {
                         }
                     }
                 }
-                elseif($date<=$yesterday){
+                elseif($date<=$today){
                     $payment_date = '-';
                 }
                 echo htmlspecialchars($payment_date); 
@@ -195,7 +195,7 @@ function payment_made($date, $paid_dates) {
                         }
                     }
                 } 
-                elseif ($date <= $yesterday) {
+                elseif ($date <= $today) {
                     $rental = $borrower['rental'];
                 } 
                 else {
@@ -215,7 +215,7 @@ function payment_made($date, $paid_dates) {
                         }
                     }
                 } 
-                elseif ($date <= $yesterday) {
+                elseif ($date <= $today) {
                     $payment = '0.00';
                 } 
                 else {
@@ -244,7 +244,7 @@ function payment_made($date, $paid_dates) {
                         }
                     }
                 } 
-                elseif ($date <= $yesterday) {
+                elseif ($date <= $today) {
                 // For past due dates where no payment has been made, the balance remains as it is
                     $balance = $balance;
                 } 
@@ -273,7 +273,7 @@ function payment_made($date, $paid_dates) {
                         }
                     }
                 } 
-                elseif ($date <= $yesterday) {
+                elseif ($date <= $today) {
                     $capital_C = '0.00';
                 } 
                 else {
@@ -299,7 +299,7 @@ function payment_made($date, $paid_dates) {
                     }
                     }
                 } 
-                elseif ($date <= $yesterday) {
+                elseif ($date <= $today) {
                     $interest = '0.00';
                 } 
                 else {
@@ -312,7 +312,7 @@ function payment_made($date, $paid_dates) {
             <td>
             <?php
                 $arrears_per_day = '';
-                if ($date <= $yesterday) {
+                if ($date <= $today) {
                 // Calculate expected payment by this date (assuming rental due daily or some interval)
                 $expected_payment = $borrower['rental'];
 
@@ -341,7 +341,7 @@ function payment_made($date, $paid_dates) {
                 static $total_arrears = 0; // Initialize static variable to keep running total of arrears
 
                 // Calculate total arrears by summing up arrears for each overdue day
-                if ($date <= $yesterday) {
+                if ($date <= $today) {
                     if ($arrears_per_day !== '') {
                         $total_arrears += $arrears_per_day;
                     }

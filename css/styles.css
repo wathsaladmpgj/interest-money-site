@@ -10,7 +10,7 @@ html,body{
     margin-bottom: 1rem;
     border-radius: 10px;
     align-items: center;
-    text-align: left;
+    text-align: center;
     color: #070675;
 }
 .temp{
@@ -26,8 +26,8 @@ html,body{
     border-radius: 10px;
 }
 .rg-temp{
-    width: 0.5fr;
-    background-color: #ffffff;
+    width: 0.4fr;
+    background-color: #d4dfff;
     border-radius: 10px;
     padding-left: 5%;
 }
@@ -67,4 +67,11 @@ nav ul li{
     font-size: 40px;
     text-align: center;
     align-items: center;
+}
+footer{
+    align-items: center;
+    text-align: center;
+}
+.header{
+    margin-top: 45rem;
 }
