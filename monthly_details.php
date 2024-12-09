@@ -61,17 +61,24 @@ $year_result = $conn->query($year_query);
     
                 -- Calculate Total Monthly Payment as before
                 SUM(
-                    CASE 
-                        WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE())
-                            THEN 
-                                GREATEST(0, DATEDIFF(LEAST(DATE_SUB(CURDATE(), INTERVAL 1 DAY), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.rental
-                        WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date)
-                            THEN (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.rental
-                        WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date)
-                            THEN DAY(b.due_date) * b.rental
-                        ELSE DAY(LAST_DAY(months.date)) * b.rental
-                    END
-                ) AS total_monthly_payment,
+        CASE 
+            -- For the current month
+            WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE()) THEN 
+                GREATEST(0, DATEDIFF(LEAST(CURDATE(), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.rental
+
+            -- For the loan month (partial month from loan date)
+            WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date) THEN 
+                (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.rental
+
+            -- For the due month (partial month until due date)
+            WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date) THEN 
+                DAY(b.due_date) * b.rental
+
+            -- For full months between the loan date and due date
+            ELSE 
+                DAY(LAST_DAY(months.date)) * b.rental
+        END
+    ) AS total_monthly_payment,
 
                 COALESCE(p_data.monthly_payment_sum, 0) AS monthly_payment_sum,
                 COALESCE(p_data.payment_count, 0) AS payment_count,
@@ -163,7 +170,7 @@ $year_result = $conn->query($year_query);
                     }
 
                     // Check if the month already exists in the monthly_details table
-                    $check_query = "SELECT id FROM monthly_details WHERE month = '" . $row['month'] . "'";
+                    $check_query = "SELECT id FROM monthly_details WHERE month = '" . $row['month'] . "'" ;
                     $check_result = $conn->query($check_query);
 
                     $arrears = $row['total_monthly_payment'] - $row['monthly_payment_sum'];
@@ -267,7 +274,11 @@ $year_result = $conn->query($year_query);
             echo "<!-- Debug: Updated Month: $updated_month -->";
 
             // Fetch all monthly data
-            $sql_monthly = "SELECT * FROM monthly_details WHERE YEAR(STR_TO_DATE(CONCAT(month, '-01'), '%Y/%M-%d')) = $selected_year";
+            $sql_monthly = "SELECT * 
+            FROM monthly_details 
+            WHERE YEAR(STR_TO_DATE(CONCAT(month, '-01'), '%Y/%M-%d')) = $selected_year 
+            ORDER BY STR_TO_DATE(CONCAT(month, '-01'), '%Y/%M-%d') DESC";
+
             $result_monthly = $conn->query($sql_monthly);
 
             if (!$result_monthly) {
