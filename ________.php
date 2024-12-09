@@ -1,47 +1,57 @@
 <?php
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "interest"; // Update this with your database name
+$host = 'localhost';
+$username = 'root';
+$password = '';
+$database = 'interest';
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($host, $username, $password, $database);
 
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch borrowers and update status
-$sql_update = "SELECT id, name, due_date, total_payments, agree_value FROM borrowers";
-$result_update = $conn->query($sql_update);
+// Fetch available years from the database
+$year_query = "SELECT DISTINCT YEAR(STR_TO_DATE(CONCAT(month, ' 01'), '%Y/%M %d')) AS year FROM monthly_details ORDER BY year DESC";
+$year_result = $conn->query($year_query);
 
-if ($result_update->num_rows > 0) {
-    while ($row = $result_update->fetch_assoc()) {
-        $id = $row['id'];
-        $due_date = $row['due_date'];
-        $total_payments = $row['total_payments'];
-        $agree_value = $row['agree_value'];
+// Get the selected year from the dropdown or default to the current year
+$selected_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 
-        // Determine status
-        if ($total_payments >= $agree_value) {
-            $status = 'yes'; // Settled
-        } elseif ($due_date < date('Y-m-d') && $total_payments < $agree_value) {
-            $status = 'no'; // Arrears
-        } elseif ($due_date >= date('Y-m-d') && $total_payments < $agree_value) {
-            $status = 'con'; // Currently paying
-        }
+// Query to select each month, the previous month's capital_received, and the sum of amounts for the month
+$sql = "SELECT 
+    curr.month AS current_month,
+    curr.capital_received AS capital_received, 
+    IFNULL(prev.capital_received, 0) AS previous_month_capital_received,
+    (SELECT IFNULL(SUM(b.amount), 0) 
+     FROM borrowers AS b 
+     WHERE DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d'), '%Y-%m') = DATE_FORMAT(b.lone_date, '%Y-%m')
+    ) AS total_amount_for_month,
+    curr.id AS monthly_details_id
+FROM 
+    monthly_details AS curr
+LEFT JOIN 
+    monthly_details AS prev 
+ON 
+    DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') - INTERVAL 1 MONTH, '%Y/%M') = prev.month
+WHERE 
+    YEAR(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d')) = ?
+ORDER BY 
+    STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') ASC";
 
-        // Update status in the database
-        $update_sql = "UPDATE borrowers SET status = '$status' WHERE id = $id";
-        $conn->query($update_sql);
-    }
-}
+// Prepare the statement for year filtering
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $selected_year);
+$stmt->execute();
+$result = $stmt->get_result();
 
-// Fetch borrowers and update status
-$sql = "SELECT id, name, lone_date, due_date, rental, amount, agree_value, no_rental, days_passed, total_payments,no_pay, total_arrears, status FROM borrowers";
-$result = $conn->query($sql);
+// Initialize the total stocks variable and previous stock variable
+$total_stocks = 0;
+$previous_stock = 0;
+
+// Get the current month and year
+$current_month = date("Y/m");
+
 ?>
 
 <!DOCTYPE html>
@@ -49,129 +59,98 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borrowers Details</title>
-    <link rel="stylesheet" href="./css/all_borrowers_details.css">
+    <title>Loan Payment Summary</title>
+    <link rel="stylesheet" href="./css/month_summary.css">
 </head>
 <body>
-    <h2>Borrowers Details</h2>
-    <?php
-        // Query to fetch the counts
-        $sql_details = "SELECT status, COUNT(*) AS count FROM borrowers GROUP BY status";
-        $result_details = $conn->query($sql_details);
 
-        // Display the results
-        if ($result_details->num_rows > 0) {
-            $total_borrowers = 0; // Initialize total borrowers counter
+<h2>Loan Payment Summary</h2>
 
-            echo "<table border='1' style='width: 30%; text-align: center;'>";
-            echo "<tr><th>Status</th><th>Count</th></tr>";
-            while ($row = $result_details->fetch_assoc()) {
-                // Map status to descriptive labels and assign background colors
-                $status_label = '';
-                $row_color = ''; // Initialize the color
-
-                if ($row['status'] == 'yes') {
-                    $status_label = 'Settled Borrowers';
-                    $row_color = 'background-color: yellow;'; // Yellow for settled
-                } elseif ($row['status'] == 'no') {
-                    $status_label = 'Arrears Borrowers';
-                    $row_color = 'background-color: rgb(245, 181, 181);'; // Red for arrears
-                } elseif ($row['status'] == 'con') {
-                    $status_label = 'Now Borrowers';
-                    $row_color = 'background-color: white;'; // White for current
-                }
-
-                // Add to total borrowers count
-                $total_borrowers += $row['count'];
-
-                // Display the row with inline background color
-                echo "<tr style='$row_color'><td style='text-align: center;'>" . $status_label . "</td><td style='text-align: center;'>" . $row['count'] . "</td></tr>";
-            }
-
-            // Add the total row with a bold style
-            echo "<tr style='font-weight: bold; background-color: lightgray;'><td style='text-align: center;'>Total Borrowers</td><td style='text-align: center;'>" . $total_borrowers . "</td></tr>";
-            echo "</table>";
-        } else {
-            echo "No data found.";
-        }
-    ?>
-
-<div class="filter-buttons">
-        <button onclick="filterTable('yes')">Settled</button>
-        <button onclick="filterTable('no')">Arrears</button>
-        <button onclick="filterTable('con')">Currently Paying</button>
-        <button onclick="filterTable('all')">All</button>
-    </div>
-    <table border="1">
-        <tr>
-            <th>No</th>
-            <th>Name</th>
-            <th>Loan Date</th>
-            <th>Due Date</th>
-            <th>Rental</th>
-            <th>Loan Amount</th>
-            <th>Agree Value</th>
-            <th>No Rent</th>
-            <th>Due Rent</th>
-            <th>Arrears Rent</th>
-            <th>Total Payment</th>
-            <th>Arrears</th>
-        </tr>
+<form method="GET" action="">
+    <label for="year">Select Year:</label>
+    <select name="year" id="year" onchange="this.form.submit()">
         <?php
-        if ($result->num_rows > 0) {
-            $row_number = 1;
-            while ($row = $result->fetch_assoc()) {
-                $due_rent =  $row['days_passed'];
-                $arrears_rent = $row['days_passed'] - $row['no_pay'];
-
-                // Determine the status class
-                $statusClass = ($row['status'] == 'yes') ? 'yes' :
-                               (($row['status'] == 'no') ? 'no' : 'con');
-
-                echo "<tr class='{$statusClass}'>";
-                echo "<td>{$row_number}</td>";
-                echo "<td><a href='details.php?id=" . $row['id'] . "'>{$row['name']}</a></td>";
-                echo "<td>{$row['lone_date']}</td>";
-                echo "<td>{$row['due_date']}</td>";
-                echo "<td>{$row['rental']}</td>";
-                echo "<td>" . number_format($row['amount'], 2) . "</td>";
-                echo "<td>{$row['agree_value']}</td>";
-                echo "<td>{$row['no_rental']}</td>";
-                echo "<td>{$due_rent}</td>";
-                echo "<td>{$arrears_rent}</td>";
-                echo "<td>{$row['total_payments']}</td>";
-                echo "<td>{$row['total_arrears']}</td>";
-                echo "</tr>";
-
-                $row_number++;
+        if ($year_result->num_rows > 0) {
+            while ($year_row = $year_result->fetch_assoc()) {
+                $year = $year_row['year'];
+                echo "<option value='$year'" . ($selected_year == $year ? " selected" : "") . ">$year</option>";
             }
-        } else {
-            echo "<tr><td colspan='12'>No borrowers found.</td></tr>";
         }
         ?>
-    </table>
+    </select>
+</form>
 
-    <script>
-        // Function to filter table rows based on status
-        function filterTable(status) {
-            const rows = document.querySelectorAll('table tr');
-            rows.forEach((row, index) => {
-                if (index === 0) return; // Skip the header row
-                if (status === 'all') {
-                    row.classList.remove('hidden');
-                } else if (!row.classList.contains(status)) {
-                    row.classList.add('hidden');
-                } else {
-                    row.classList.remove('hidden');
-                }
-            });
+<div class="table-container">
+    <table>
+        <tr>
+            <th>Month</th>
+            <th>Capital Saving</th>
+            <th>New Saving</th>
+            <th>New Loan</th>
+            <th>Stock Increase (%)</th>
+            <th>Capital Outstanding</th>
+        </tr>
+
+        <?php
+        while ($row = $result->fetch_assoc()) {
+            $row_month_str = trim($row['current_month']);
+            $row_month_date = DateTime::createFromFormat('Y/F', $row_month_str);
+            if (!$row_month_date) {
+                continue;
+            }
+            $row_month = $row_month_date->format('Y/F');
+
+            $capital_received = (float)$row['capital_received'];
+            $previous_capital_received = (float)$row['previous_month_capital_received'];
+            $new_loan = (float)$row['total_amount_for_month'];
+
+            // Capital saving is directly assigned as capital received
+            $capital_saving = $capital_received;
+
+            // Calculate new saving
+            $new_saving = max(0, $new_loan - $capital_saving);
+
+            // Calculate total stocks
+            $total_stocks = $previous_stock  - $capital_saving + $new_loan;
+
+            // Calculate stock increase percentage
+            $stock_increes = ($new_loan > 0) ? ($total_stocks - $previous_stock) / $new_loan * 100 : 0;
+
+            // Display the row
+            ?>
+            <tr>
+                <td><?php echo $row_month; ?></td>
+                <td><?php echo number_format($capital_saving, 2); ?></td>
+                <td><?php echo number_format($new_saving, 2); ?></td>
+                <td><?php echo number_format($new_loan, 2); ?></td>
+                <td><?php echo number_format($stock_increes, 2); ?>%</td>
+                <td><?php echo number_format($total_stocks, 2); ?></td>
+            </tr>
+            <?php
+
+            // Insert or update data into the monthly_savings table
+            $stmt_insert = $conn->prepare("INSERT INTO monthly_savings (month, capital_saving, new_saving, new_loan, stock_increase_percentage, total_stocks, monthly_details_id)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                    ON DUPLICATE KEY UPDATE
+                                    capital_saving = VALUES(capital_saving), 
+                                    new_saving = VALUES(new_saving),
+                                    new_loan = VALUES(new_loan),
+                                    stock_increase_percentage = VALUES(stock_increase_percentage),
+                                    total_stocks = VALUES(total_stocks)");
+            $stmt_insert->bind_param("ssssdds", $row['current_month'], $capital_saving, $new_saving, $new_loan, $stock_increes, $total_stocks, $row['monthly_details_id']);
+            $stmt_insert->execute();
+            $stmt_insert->close();
+
+            $previous_stock = $total_stocks;
         }
-    </script>
+        ?>
+
+    </table>
+</div>
 </body>
 </html>
->
 
 <?php
-// Close the database connection
+$stmt->close();
 $conn->close();
 ?>

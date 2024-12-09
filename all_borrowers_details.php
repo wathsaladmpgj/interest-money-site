@@ -80,7 +80,7 @@ $result = $conn->query($sql);
                     $status_label = 'Arrears Borrowers';
                     $row_color = 'background-color: rgb(245, 181, 181);'; // Red for arrears
                 } elseif ($row['status'] == 'con') {
-                    $status_label = 'Now Borrowers';
+                    $status_label = 'Active Borrowers';
                     $row_color = 'background-color: white;'; // White for current
                 }
 

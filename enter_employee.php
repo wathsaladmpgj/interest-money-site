@@ -11,6 +11,7 @@
 <body>
     <nav>
         <li><a href="./employee.php">UPDATE EMPLOYEE</a></li>
+        <li><a href="./employee_details.php">EMPLOYEE DETAILS</a></li>
     </nav>
     <h2>Enter New Employee Details</h2>
     <form action="enter_employee1.php" method="POST">

@@ -51,16 +51,17 @@ if ($borrowers_result->num_rows > 0) {
         $total_rental_paid = $total_rental_paid_by_borrower[$borrower_id] ?? 0;
 
         $loan_date = new DateTime($borrower['lone_date']); 
-        $loan_date->modify('+1 day'); 
+        //$loan_date->modify('+1 day'); 
         $due_date = new DateTime($borrower['due_date']);
         $today = new DateTime();
         $yesterday = clone $today;
-        $yesterday->modify('-1 day');
+        //$yesterday->modify('-1 day');
+        $today->modify('+1 day');
 
         // Calculate days passed based on due date
         if ($due_date >= $today) {
             $end_date = clone $today;
-            $days_passed = $loan_date->diff($end_date)->days; 
+            $days_passed = $loan_date->diff($today)->days;
         } elseif ($due_date >= $yesterday) {
             $end_date = $due_date;
             $days_passed = $loan_date->diff($end_date)->days; 
@@ -221,7 +222,7 @@ if ($result_customer->num_rows > 0) {
     $total_customer =0;
 }
 
-$sql_employee = "SELECT * FROM employee_details";
+$sql_employee = "SELECT * FROM employee_payment_details";
 $result_employee = $conn->  query($sql_employee);
 $all_payed_salary =0;
 $all_payed_allowance =0;
@@ -630,16 +631,23 @@ $selected_year = isset($_GET['year']) ? intval($_GET['year']) : date("Y");
                 -- Calculate Total Monthly Payment as before
                 SUM(
                     CASE 
-                        WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE())
-                            THEN 
-                                GREATEST(0, DATEDIFF(LEAST(DATE_SUB(CURDATE(), INTERVAL 1 DAY), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.rental
-                        WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date)
-                            THEN (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.rental
-                        WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date)
-                            THEN DAY(b.due_date) * b.rental
-                        ELSE DAY(LAST_DAY(months.date)) * b.rental
-                    END
-                ) AS total_monthly_payment,
+                        -- For the current month
+                        WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE()) THEN 
+                            GREATEST(0, DATEDIFF(LEAST(CURDATE(), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.rental
+
+                        -- For the loan month (partial month from loan date)
+                        WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date) THEN 
+                            (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.rental
+
+                        -- For the due month (partial month until due date)
+                        WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date) THEN 
+                            DAY(b.due_date) * b.rental
+
+                        -- For full months between the loan date and due date
+                        ELSE 
+                            DAY(LAST_DAY(months.date)) * b.rental
+                        END
+                    ) AS total_monthly_payment,
 
                 COALESCE(p_data.monthly_payment_sum, 0) AS monthly_payment_sum,
                 COALESCE(p_data.payment_count, 0) AS payment_count,
@@ -745,7 +753,7 @@ $selected_year = isset($_GET['year']) ? intval($_GET['year']) : date("Y");
         }
 ?>
 
-
+<!-------------------------------------------------------------------------------------------------------------------->
 <?php
 $sql_summary = "SELECT 
 curr.month AS current_month,
