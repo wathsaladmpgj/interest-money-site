@@ -40,7 +40,7 @@ if ($result_update->num_rows > 0) {
 }
 
 // Fetch borrowers and update status
-$sql = "SELECT id, name, lone_date, due_date, rental, amount, agree_value, no_rental, days_passed, total_payments,no_pay, total_arrears, status FROM borrowers";
+$sql = "SELECT id, name,lone_number, lone_date, due_date, rental, amount, agree_value, no_rental, days_passed, total_payments,no_pay, total_arrears, status FROM borrowers";
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
@@ -74,13 +74,13 @@ $result = $conn->query($sql);
                 $row_color = ''; // Initialize the color
 
                 if ($row['status'] == 'yes') {
-                    $status_label = 'Settled Borrowers';
+                    $status_label = 'Settled Loan';
                     $row_color = 'background-color: yellow;'; // Yellow for settled
                 } elseif ($row['status'] == 'no') {
-                    $status_label = 'Arrears Borrowers';
+                    $status_label = 'Arrears Loan';
                     $row_color = 'background-color: rgb(245, 181, 181);'; // Red for arrears
                 } elseif ($row['status'] == 'con') {
-                    $status_label = 'Active Borrowers';
+                    $status_label = 'Active Loan';
                     $row_color = 'background-color: white;'; // White for current
                 }
 
@@ -105,6 +105,7 @@ $result = $conn->query($sql);
         <tr>
             <th>No</th>
             <th>Name</th>
+            <th>No</th>
             <th>Loan Date</th>
             <th>Due Date</th>
             <th>Rental</th>
@@ -130,6 +131,7 @@ $result = $conn->query($sql);
                 echo "<tr class='{$statusClass}'>";
                 echo "<td>{$row_number}</td>";
                 echo "<td><a href='details.php?id=" . $row['id'] . "'>{$row['name']}</a></td>";
+                echo "<td>{$row['lone_number']}</td>";
                 echo "<td>{$row['lone_date']}</td>";
                 echo "<td>{$row['due_date']}</td>";
                 echo "<td>{$row['rental']}</td>";

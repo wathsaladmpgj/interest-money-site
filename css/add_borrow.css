@@ -64,6 +64,11 @@ input[type="submit"] {
 input[type="submit"]:hover {
     background-color: #333;
 }
+.add_details{
+    display: flex;
+    flex-direction: row;
+    gap: 10rem;
+}
 
 @media screen and (max-width: 600px) {
     form {

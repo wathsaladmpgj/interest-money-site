@@ -79,6 +79,7 @@ $employee_result = $conn->query($employee_sql);
                 <th>Total Salary</th>
                 <th>Total Allowance</th>
                 <th>Total Provision</th>
+                <th>Total Payment</th>
             </tr>
         </thead>
         <tbody>
@@ -90,6 +91,8 @@ $employee_result = $conn->query($employee_sql);
                     echo "<td>" . number_format($row['total_salary'], 2) . "</td>";
                     echo "<td>" . number_format($row['total_allowance'], 2) . "</td>";
                     echo "<td>" . number_format($row['total_provision'], 2) . "</td>";
+                    echo "<td>" . number_format($row['total_provision']+$row['total_allowance']+$row['total_salary'], 2) . "</td>";
+                    
                     echo "</tr>";
                 }
             } else {
@@ -129,6 +132,7 @@ $employee_result = $conn->query($employee_sql);
                 <th>Total Monthly Salary</th>
                 <th>Total Monthly Allowance</th>
                 <th>Total Monthly Provision</th>
+                <th>Total Monthly Payment</th>
             </tr>
         </thead>
         <tbody>
@@ -145,6 +149,7 @@ $employee_result = $conn->query($employee_sql);
                     echo "<td>" . number_format($row['total_monthly_salary'], 2) . "</td>";
                     echo "<td>" . number_format($row['total_monthly_allowance'], 2) . "</td>";
                     echo "<td>" . number_format($row['total_monthly_provision'], 2) . "</td>";
+                    echo "<td>" . number_format($row['total_monthly_provision']+$row['total_monthly_allowance']+$row['total_monthly_salary'], 2) . "</td>";
                     echo "</tr>";
                 }
             } else {

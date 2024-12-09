@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $payment_month = $_POST['payment_month'];
 
     // Validate the inputs (optional but recommended)
-    if (empty($salary) || empty($allownce) || empty($privision) || empty($employee_id) || empty($payment_date) || empty($payment_month)) {
+    if (empty($employee_id) || empty($payment_date) || empty($payment_month)) {
         echo "All fields are required.";
     } else {
         // Prepare the SQL query to insert data into payment_details
@@ -86,17 +86,17 @@ $conn->close();
 
         <div class="form-group">
             <label for="salary">Salary</label>
-            <input type="number" id="salary" name="salary" required>
+            <input type="number" id="salary" name="salary">
         </div>
 
         <div class="form-group">
             <label for="allownce">Allowance</label>
-            <input type="number" id="allownce" name="allownce" required>
+            <input type="number" id="allownce" name="allownce">
         </div>
 
         <div class="form-group">
             <label for="privision">Provision</label>
-            <input type="number" id="privision" name="privision" required>
+            <input type="number" id="privision" name="privision">
         </div>
 
         <div class="form-group">

@@ -9,9 +9,6 @@ $dbname = "interest";
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check if the connection was successful
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 //-----------------------------------------------------------------------------------------------------//
 function fetch_total_payments($conn, $borrower_id) {
     $sl = "SELECT SUM(rental_amount) AS total_payment FROM payments WHERE borrower_id = ?";
@@ -222,6 +219,15 @@ if ($result_customer->num_rows > 0) {
     $total_customer =0;
 }
 
+$sql_borrowers_details = "SELECT COUNT(*) AS total_loan FROM borrower_details";
+$result_borrowers_details = $conn->query($sql_borrowers_details);
+if ($result_borrowers_details->num_rows > 0) {
+    $rows= $result_borrowers_details->fetch_assoc();
+    $total_loan=$rows['total_loan'];
+} else{
+    $total_loan =0;
+}
+
 $sql_employee = "SELECT * FROM employee_payment_details";
 $result_employee = $conn->  query($sql_employee);
 $all_payed_salary =0;
@@ -239,13 +245,15 @@ $result_monthly_emp_details = $conn-> query($sql_employee_details);
 $all_allowance=0;
 $all_salary=0;
 $all_privision=0;
+$all_payed_profit=0;
 while($emp_details = $result_monthly_emp_details->fetch_assoc()){
     $all_allowance += $emp_details['interest2']; 
     $all_salary += $emp_details['interest1']; 
     $all_privision += $emp_details['interest3']; 
+    $all_payed_profit += $emp_details['interest4'];
 }
 
-$all_payed_profit=$dyInterest-$all_salary-$all_allowance-$all_privision;
+
 ?>
 
 <!DOCTYPE html>
@@ -265,7 +273,7 @@ $all_payed_profit=$dyInterest-$all_salary-$all_allowance-$all_privision;
         <div class="lf-temp">
             <nav>
                 <ul>
-                    <li><a href="./add_borrower.php">Add Borrower</a></li>
+                    <li><a href="./borrow_add.php">Add Borrower</a></li>
                     <li><a href="./collect_amount.php">Collect Amount</a></li>
                     <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
@@ -586,7 +594,8 @@ $all_payed_profit=$dyInterest-$all_salary-$all_allowance-$all_privision;
 
         <!-- Dashboard details -->
         <div class="rg-temp">
-            <h3>Number of Customer : <?php echo number_format($total_customer); ?></h3>
+            <h3>Number of Customer: <?php echo number_format($total_loan); ?></h3>
+            <h3>Number of Loans: <?php echo number_format($total_customer); ?></h3>
             <hr>
             <h3>Total AgreeValue:&nbsp; Rs. <?php echo number_format($totalAgreValu, 2); ?></h3>
             <h3>Total Investment:&nbsp; Rs. <?php echo number_format($allInvest, 2); ?></h3>
@@ -755,7 +764,7 @@ $selected_year = isset($_GET['year']) ? intval($_GET['year']) : date("Y");
 
 <!-------------------------------------------------------------------------------------------------------------------->
 <?php
-$sql_summary = "SELECT 
+$sql = "SELECT 
 curr.month AS current_month,
 curr.capital_received AS capital_received, 
 IFNULL(prev.capital_received, 0) AS previous_month_capital_received,
@@ -770,14 +779,16 @@ LEFT JOIN
 monthly_details AS prev 
 ON 
 DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') - INTERVAL 1 MONTH, '%Y/%M') = prev.month
+WHERE 
+YEAR(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d')) = ?
 ORDER BY 
 STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') ASC";
 
-// Execute the query
-$result_summary = $conn->query($sql_summary);
-if (!$result_summary) {
-die("Error in query: " . $conn->error);
-}
+// Prepare the statement for year filtering
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $selected_year);
+$stmt->execute();
+$result = $stmt->get_result();
 
 // Initialize the total stocks variable and previous stock variable
 $total_stocks = 0;
@@ -786,16 +797,9 @@ $previous_stock = 0;
 // Get the current month and year
 $current_month = date("Y/m");
 
-// Automatically set updated month to current month
-$updated_month = $current_month;
-
-// Convert updated month to a DateTime object for accurate comparison
-$updated_date = DateTime::createFromFormat('Y/m', trim($updated_month));
 
 
-
-while ($row = $result_summary->fetch_assoc()) {
-    // Retrieve and format the month for the current row
+while ($row = $result->fetch_assoc()) {
     $row_month_str = trim($row['current_month']);
     $row_month_date = DateTime::createFromFormat('Y/F', $row_month_str);
     if (!$row_month_date) {
@@ -803,28 +807,24 @@ while ($row = $result_summary->fetch_assoc()) {
     }
     $row_month = $row_month_date->format('Y/F');
 
-    // Retrieve necessary fields
     $capital_received = (float)$row['capital_received'];
     $previous_capital_received = (float)$row['previous_month_capital_received'];
     $new_loan = (float)$row['total_amount_for_month'];
 
-    // Calculate capital saving and new saving
-    $capital_saving = ($new_loan >= $previous_capital_received) ? $previous_capital_received : $new_loan;
+    // Capital saving is directly assigned as capital received
+    $capital_saving = $capital_received;
+
+    // Calculate new saving
     $new_saving = max(0, $new_loan - $capital_saving);
 
-    // Apply the updated formula for the current month or the updated month only
-    if ($row_month === $current_month) {
-        $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
-    } elseif ($row_month === $updated_date->format('Y/m')) {
-        $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
-    } else {
-        $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving;
-    }
+    // Calculate total stocks
+    $total_stocks = $previous_stock  - $capital_saving + $new_loan;
 
     // Calculate stock increase percentage
     $stock_increes = ($new_loan > 0) ? ($total_stocks - $previous_stock) / $new_loan * 100 : 0;
+
     // Insert or update data into the monthly_savings table
-    $stmt = $conn->prepare("INSERT INTO monthly_savings (month, capital_saving, new_saving, new_loan, stock_increase_percentage, total_stocks, monthly_details_id)
+    $stmt_insert = $conn->prepare("INSERT INTO monthly_savings (month, capital_saving, new_saving, new_loan, stock_increase_percentage, total_stocks, monthly_details_id)
                             VALUES (?, ?, ?, ?, ?, ?, ?)
                             ON DUPLICATE KEY UPDATE
                             capital_saving = VALUES(capital_saving), 
@@ -832,11 +832,10 @@ while ($row = $result_summary->fetch_assoc()) {
                             new_loan = VALUES(new_loan),
                             stock_increase_percentage = VALUES(stock_increase_percentage),
                             total_stocks = VALUES(total_stocks)");
-    $stmt->bind_param("ssssdds", $row['current_month'], $capital_saving, $new_saving, $new_loan, $stock_increes, $total_stocks, $row['monthly_details_id']);
-    $stmt->execute();
-    $stmt->close();
+    $stmt_insert->bind_param("ssssdds", $row['current_month'], $capital_saving, $new_saving, $new_loan, $stock_increes, $total_stocks, $row['monthly_details_id']);
+    $stmt_insert->execute();
+    $stmt_insert->close();
 
-    // Update previous_stock for the next iteration
     $previous_stock = $total_stocks;
 }
 ?>

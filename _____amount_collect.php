@@ -1,21 +1,65 @@
 <?php
-$servername = "localhost";
+// Database connection parameters
+$host = "localhost";
 $username = "root";
 $password = "";
-$dbname = "interest";
+$database = "interest";
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+// Create a connection to the MySQL database
+$conn = new mysqli($host, $username, $password, $database);
+
+// Check if the connection is successful
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Get the selected year from the form, or default to the current year
-$selected_year = isset($_GET['year']) ? intval($_GET['year']) : date("Y");
-
-// Fetch distinct years for the dropdown
-$year_query = "SELECT DISTINCT YEAR(lone_date) AS year FROM borrowers ORDER BY year DESC";
-
+// Fetch available years from the database
+$year_query = "SELECT DISTINCT YEAR(STR_TO_DATE(CONCAT(month, ' 01'), '%Y/%M %d')) AS year FROM monthly_details ORDER BY year DESC";
 $year_result = $conn->query($year_query);
+
+// Get the selected year from the dropdown or default to the current year
+$selected_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+
+// Query to select each month, the previous month's capital_received, and the sum of amounts for the month
+$sql = "SELECT 
+    curr.month AS current_month,
+    curr.capital_received AS capital_received, 
+    IFNULL(prev.capital_received, 0) AS previous_month_capital_received,
+    (SELECT IFNULL(SUM(b.amount), 0) 
+     FROM borrowers AS b 
+     WHERE DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d'), '%Y-%m') = DATE_FORMAT(b.lone_date, '%Y-%m')
+    ) AS total_amount_for_month,
+    curr.id AS monthly_details_id
+FROM 
+    monthly_details AS curr
+LEFT JOIN 
+    monthly_details AS prev 
+ON 
+    DATE_FORMAT(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') - INTERVAL 1 MONTH, '%Y/%M') = prev.month
+WHERE 
+    YEAR(STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d')) = ?
+ORDER BY 
+    STR_TO_DATE(CONCAT(curr.month, ' 01'), '%Y/%M %d') ASC";
+
+// Prepare the statement for year filtering
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $selected_year);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Initialize the total stocks variable and previous stock variable
+$total_stocks = 0;
+$previous_stock = 0;
+
+// Get the current month and year
+$current_month = date("Y/m");
+
+// Automatically set updated month to current month
+$updated_month = $current_month;
+
+// Convert updated month to a DateTime object for accurate comparison
+$updated_date = DateTime::createFromFormat('Y/m', trim($updated_month));
+
 ?>
 
 <!DOCTYPE html>
@@ -23,321 +67,108 @@ $year_result = $conn->query($year_query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monthly Payment Summary by Year</title>
+    <title>Loan Payment Summary</title>
+    <!-- Link to internal CSS styling -->
     <link rel="stylesheet" href="./css/month_summary.css">
-    <style>
-        table { width: 100%; border-collapse: collapse; }
-        table, th, td { border: 1px solid black; }
-        th, td { padding: 8px; text-align: center; }
-    </style>
 </head>
 <body>
-    <!-- Form to select year -->
-    <form method="GET" action="">
-        <label for="year">Select Year:</label>
-        <select name="year" id="year" onchange="this.form.submit()">
-            <?php
-                // Populate the year dropdown
-                if ($year_result->num_rows > 0) {
-                    while ($year_row = $year_result->fetch_assoc()) {
-                        $year = $year_row['year'];
-                        echo "<option value='$year'" . ($selected_year == $year ? " selected" : "") . ">$year</option>";
-                    }
-                }     
-            ?>
-        </select>
-    </form>
 
-    <h2>Monthly Payment Summary for All Borrowers - Yearly View</h2>
-    <?php
-        // Define yesterday’s date for calculations in the current month
-        $current_date = date("Y-m-d");
-        $yesterday_date = date("Y-m-d", strtotime('-1 day'));
-        $current_month_start = date("Y-m-01");
+<h2>Loan Payment Summary</h2>
 
-        // SQL query to calculate total monthly payment, monthly payment sum, and count payments per month
-        $sql = "SELECT 
-                DATE_FORMAT(months.date, '%Y/%M') AS month,
-    
-                -- Calculate Total Monthly Payment as before
-                SUM(
-        CASE 
-            -- For the current month
-            WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE()) THEN 
-                GREATEST(0, DATEDIFF(LEAST(CURDATE(), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.rental
+<!-- Year Selection Form -->
+<form method="GET" action="">
+    <label for="year">Select Year:</label>
+    <select name="year" id="year" onchange="this.form.submit()">
+        <?php
+        if ($year_result->num_rows > 0) {
+            while ($year_row = $year_result->fetch_assoc()) {
+                $year = $year_row['year'];
+                echo "<option value='$year'" . ($selected_year == $year ? " selected" : "") . ">$year</option>";
+            }
+        }
+        ?>
+    </select>
+</form>
 
-            -- For the loan month (partial month from loan date)
-            WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date) THEN 
-                (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.rental
-
-            -- For the due month (partial month until due date)
-            WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date) THEN 
-                DAY(b.due_date) * b.rental
-
-            -- For full months between the loan date and due date
-            ELSE 
-                DAY(LAST_DAY(months.date)) * b.rental
-        END
-    ) AS total_monthly_payment,
-
-                COALESCE(p_data.monthly_payment_sum, 0) AS monthly_payment_sum,
-                COALESCE(p_data.payment_count, 0) AS payment_count,
-
-                -- Calculate Total Interest to be Received for the month
-                SUM(
-                    CASE 
-                        WHEN YEAR(months.date) = YEAR(CURDATE()) AND MONTH(months.date) = MONTH(CURDATE())
-                            THEN GREATEST(0, DATEDIFF(LEAST(DATE_SUB(CURDATE(), INTERVAL 1 DAY), b.due_date), GREATEST(DATE_FORMAT(CURDATE(), '%Y-%m-01'), DATE_ADD(b.lone_date, INTERVAL 1 DAY))) + 1) * b.interest_day
-                        WHEN MONTH(months.date) = MONTH(b.lone_date) AND YEAR(months.date) = YEAR(b.lone_date)
-                            THEN (DATEDIFF(LAST_DAY(b.lone_date), DATE_ADD(b.lone_date, INTERVAL 1 DAY)) + 1) * b.interest_day
-                        WHEN MONTH(months.date) = MONTH(b.due_date) AND YEAR(months.date) = YEAR(b.due_date)
-                            THEN DAY(b.due_date) * b.interest_day
-                        ELSE DAY(LAST_DAY(months.date)) * b.interest_day
-                    END
-                ) AS total_interest_to_be_received
-
-                FROM 
-                    borrowers b
-                CROSS JOIN (
-                            SELECT DATE_FORMAT(DATE_ADD('$selected_year-01-01', INTERVAL n MONTH), '%Y-%m-01') AS date
-                            FROM (
-                                SELECT @row := @row + 1 AS n
-                                FROM (SELECT 0 UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 
-                                    UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 
-                                    UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11) AS x,
-                                (SELECT @row := -1) AS r
-                            ) AS nums
-                ) AS months
-                LEFT JOIN (
-                        SELECT 
-                            DATE_FORMAT(payment_date, '%Y/%M') AS payment_month,
-                            SUM(rental_amount) AS monthly_payment_sum,
-                            COUNT(rental_amount) AS payment_count
-                        FROM 
-                            payments
-                        WHERE 
-                            YEAR(payment_date) = $selected_year
-                        GROUP BY 
-                            DATE_FORMAT(payment_date, '%Y/%m')
-                ) AS p_data ON DATE_FORMAT(months.date, '%Y/%M') = p_data.payment_month
-                WHERE 
-                    YEAR(months.date) = $selected_year
-                    AND months.date BETWEEN DATE_FORMAT(b.lone_date, '%Y-%m-01') AND DATE_FORMAT(b.due_date, '%Y-%m-01')
-                    AND months.date <= LAST_DAY(CURDATE())
-                GROUP BY month
-                ORDER BY months.date DESC;
-        ";
-
-        $result = $conn->query($sql);
-    ?>
-
+<div class="table-container">
     <table>
         <tr>
             <th>Month</th>
-            <th>No of Pay</th>
-            <th>Total Amount (All Borrowers)</th>
-            <th>Total capital to be Received</th>
-            <th>Total Interest to be Received</th>
-            <th>Monthly Payment Sum</th>
-            <th>capital Received</th>
-            <th>Interest Received</th>
-            <th>Arrears</th>
+            <th>Capital Saving</th>
+            <th>New cash inplow</th>
+            <th>New Loan</th>
+            <th>Stock Increase (%)</th>
+            <th>Capital Outstanding</th>
         </tr>
 
         <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    // Retrieve payments for the specific month to calculate Interest Received
-                    $monthly_payment_Interest = 0;
-        
-                    // SQL to get each payment with associated borrower's interest_day and rental_amount for the selected month
-                    $payment_query = "SELECT p.rental_amount, p.payment_date, b.interest_day
-                                    FROM payments p
-                                    JOIN borrowers b ON p.borrower_id = b.id
-                                    WHERE DATE_FORMAT(p.payment_date, '%Y/%M') = '" . $row['month'] . "'";
-        
-                    $payment_result = $conn->query($payment_query);
+        // Loop through each row from the result
+        while ($row = $result->fetch_assoc()) {
+            // Retrieve and format the month for the current row
+            $row_month_str = trim($row['current_month']);
+            $row_month_date = DateTime::createFromFormat('Y/F', $row_month_str);
+            if (!$row_month_date) {
+                continue;
+            }
+            $row_month = $row_month_date->format('Y/F');
 
-                    if ($payment_result && $payment_result->num_rows > 0) {
-                        while ($payment = $payment_result->fetch_assoc()) {
-                            // Calculate interest based on the given logic
-                            if ($payment['interest_day'] <= $payment['rental_amount']) {
-                                $monthly_payment_Interest += $payment['interest_day'];
-                            } else {
-                                $monthly_payment_Interest += $payment['rental_amount'];
-                            }
-                        }
-                    }
+            // Retrieve necessary fields
+            $capital_received = (float)$row['capital_received'];
+            $previous_capital_received = (float)$row['previous_month_capital_received'];
+            $new_loan = (float)$row['total_amount_for_month'];
 
-                    // Check if the month already exists in the monthly_details table
-                    $check_query = "SELECT id FROM monthly_details WHERE month = '" . $row['month'] . "'";
-                    $check_result = $conn->query($check_query);
+            // Calculate capital saving and new saving
+            $capital_saving = ($new_loan >= $previous_capital_received) ? $previous_capital_received : $new_loan;
+            $new_saving = max(0, $new_loan - $capital_saving);
 
-                    $arrears = $row['total_monthly_payment'] - $row['monthly_payment_sum'];
-                    $capital_received =$row['monthly_payment_sum']-$monthly_payment_Interest;
-                    $total_capital =$row['total_monthly_payment']-$row['total_interest_to_be_received'];
-
-                    // If the month already exists, update the existing row
-                    if ($check_result->num_rows > 0) {
-                        $update_query = "UPDATE monthly_details 
-                            SET payment_count = " . $row['payment_count'] . ", 
-                                total_monthly_payment = " . $row['total_monthly_payment'] . ", 
-                                total_interest_to_be_received = " . $row['total_interest_to_be_received'] . ", 
-                                monthly_payment_sum = " . $row['monthly_payment_sum'] . ", 
-                                interest_received = " . $monthly_payment_Interest . ", 
-                                arrears = " . $arrears . " ,
-                                total_month_capital =".$total_capital.",
-                                capital_received =".$capital_received."
-                                WHERE month = '" . $row['month'] . "'";
-                        $conn->query($update_query);
-                    } else {
-                        // If the month does not exist, insert a new row
-                        $insert_query = "INSERT INTO monthly_details (month, payment_count, total_monthly_payment,             total_interest_to_be_received, monthly_payment_sum, interest_received, arrears,total_month_capital,capital_received)
-                                        VALUES ('" . $row['month'] . "', " . $row['payment_count'] . ", " . $row['total_monthly_payment'] . ", " . $row['total_interest_to_be_received'] . ", " . $row['monthly_payment_sum'] . ", " . $monthly_payment_Interest . ", " . $arrears . ",".$total_capital.",".$capital_received.")";
-                        $conn->query($insert_query);
-                    }
-
-                    echo "<tr>";
-                    echo "<td>" . $row['month'] . "</td>";
-                    echo "<td>" . $row['payment_count'] . "</td>";
-                    echo "<td>" . number_format($row['total_monthly_payment'], 2) . "</td>";
-                    echo "<td>" . number_format($total_capital, 2) . "</td>";
-                    echo "<td>" . number_format($row['total_interest_to_be_received'], 2) . "</td>";
-                    echo "<td>" . number_format($row['monthly_payment_sum'], 2) . "</td>";
-                    echo "<td>" . number_format($capital_received, 2) . "</td>";
-                    echo "<td>" . number_format($monthly_payment_Interest, 2) . "</td>";
-                    echo "<td>" . number_format($row['total_monthly_payment'] - $row['monthly_payment_sum'], 2) . "</td>"; 
-                    echo "</tr>";
-                }
+            // Apply the updated formula for the current month or the updated month only
+            if ($row_month === $current_month) {
+                $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
+            } elseif ($row_month === $updated_date->format('Y/m')) {
+                $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving - $capital_received;
             } else {
-                echo "<tr><td colspan='7'>No data available for the selected year up to the current month</td></tr>";
+                $total_stocks = $previous_stock - $previous_capital_received + $capital_saving + $new_saving;
             }
+
+            // Calculate stock increase percentage
+            $stock_increes = ($new_loan > 0) ? ($total_stocks - $previous_stock) / $new_loan * 100 : 0;
+
+            // Display the row
+            ?>
+            <tr>
+                <td><?php echo $row_month; ?></td>
+                <td><?php echo number_format($capital_saving, 2); ?></td>
+                <td><?php echo number_format($new_saving, 2); ?></td>
+                <td><?php echo number_format($new_loan, 2); ?></td>
+                <td><?php echo number_format($stock_increes, 2); ?>%</td>
+                <td><?php echo number_format($total_stocks, 2); ?></td>
+            </tr>
+            <?php
+            // Insert or update data into the monthly_savings table
+            $stmt_insert = $conn->prepare("INSERT INTO monthly_savings (month, capital_saving, new_saving, new_loan, stock_increase_percentage, total_stocks, monthly_details_id)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                    ON DUPLICATE KEY UPDATE
+                                    capital_saving = VALUES(capital_saving), 
+                                    new_saving = VALUES(new_saving),
+                                    new_loan = VALUES(new_loan),
+                                    stock_increase_percentage = VALUES(stock_increase_percentage),
+                                    total_stocks = VALUES(total_stocks)");
+            $stmt_insert->bind_param("ssssdds", $row['current_month'], $capital_saving, $new_saving, $new_loan, $stock_increes, $total_stocks, $row['monthly_details_id']);
+            $stmt_insert->execute();
+            $stmt_insert->close();
+
+            // Update previous_stock for the next iteration
+            $previous_stock = $total_stocks;
+        }
         ?>
+
     </table>
-
-    <!--Interest rate enter------------------------------------------------------------->
-    <br><br><br>
-    <h2 class="from_hed">INTEREST RATE</h2>
-    <form action="./interest_rate1.php" method="POST">
-        <label for="interestRate1">Interest 1 (%)</label>
-        <input type="number" id="interestRate1" name="interestRate1" min="0" max="100" step="0.01" required><br><br>
-
-        <label for="interestRate2">Interest 2 (%)</label>
-        <input type="number" id="interestRate2" name="interestRate2" min="0" max="100" step="0.01" required><br><br>
-
-        <label for="interestRate3">Interest 3 (%)</label>
-        <input type="number" id="interestRate3" name="interestRate3" min="0" max="100" step="0.01" required><br><br>
-
-        <label for="interestRate4">Interest 4 (%)</label>
-        <input type="number" id="interestRate4" name="interestRate4" min="0" max="100" step="0.01" required><br><br>
-
-        <input type="submit" value="Submit">
-    </form>
-
-    <!--Interest rate table-->
-    <br>
-    <h2>Interest Calculate</h2>
-    <form method="post">
-        <?php
-            $sql_years = "SELECT DISTINCT YEAR(STR_TO_DATE(CONCAT(month, '-01'), '%Y/%M-%d')) AS year FROM monthly_details ORDER BY year DESC";
-            $result_years = $conn->query($sql_years);
-
-            while ($row_year = $result_years->fetch_assoc()) {
-                $selected = isset($_POST['year']) && $_POST['year'] == $row_year['year'] ? 'selected' : '';
-            }
-        ?>
-    </form>
-
-    <table>
-        <tr>
-            <th>Month</th>
-            <th>Capital</th>
-            <th>Interest 1</th>
-            <th>Interest 2</th>
-            <th>Interest 3</th>
-            <th>Interest 4</th>
-            <th>Total</th>
-            <th>Total Interest</th>
-        </tr>
-
-        <?php
-            // Fetch the current interest rate and updated month
-            $sql_interestrate = "SELECT * FROM interestrate ORDER BY updated_month DESC LIMIT 1";
-            $result_interest = $conn->query($sql_interestrate);
-
-            if (!$result_interest) {
-                die("Error in interest rate query: " . $conn->error);
-            }
-
-            $interest_rate = $result_interest->fetch_assoc();
-            $updated_month = $interest_rate['updated_month'];
-            echo "<!-- Debug: Updated Month: $updated_month -->";
-
-            // Fetch all monthly data
-            $sql_monthly = "SELECT * FROM monthly_details WHERE YEAR(STR_TO_DATE(CONCAT(month, '-01'), '%Y/%M-%d')) = $selected_year";
-            $result_monthly = $conn->query($sql_monthly);
-
-            if (!$result_monthly) {
-                die("Error in monthly details query: " . $conn->error);
-            }
-            if ($result_monthly->num_rows > 0) {
-                while ($monthly_interest = $result_monthly->fetch_assoc()) {
-                    // Debugging output for each month's data
-                    echo "<!-- Debug: Processing Month: " . htmlspecialchars($monthly_interest['month']) . " -->";
-
-                    $monthly_date = DateTime::createFromFormat('Y/F', trim($monthly_interest['month']));
-                    $updated_date = DateTime::createFromFormat('Y/F', trim($updated_month));
-
-                    // Check if the current month is the updated month or a later month
-                    if ($monthly_date >= $updated_date) {
-                        $interest1 = $monthly_interest['interest_received'] * $interest_rate['interest1'] / 100;
-                        $interest2 = $monthly_interest['interest_received'] * $interest_rate['interest2'] / 100;
-                        $interest3 = $monthly_interest['interest_received'] * $interest_rate['interest3'] / 100;
-                        $interest4 = $monthly_interest['interest_received'] * $interest_rate['interest4'] / 100;
-
-                        // Update monthly_details record with these rates
-                        $update_sql = "UPDATE monthly_details SET 
-                            interest1 = {$interest1}, 
-                            interest2 = {$interest2}, 
-                            interest3 = {$interest3}, 
-                            interest4 = {$interest4} 
-                            WHERE id = {$monthly_interest['id']}";
-
-                        if (!$conn->query($update_sql)) {
-                            die("Error updating monthly details: " . $conn->error);
-                        }
-
-                        // Debugging output for update success
-                        echo "<!-- Debug: Updated Month: " . htmlspecialchars($monthly_interest['month']) . " -->";
-                    } else {
-                        $interest1 = $monthly_interest['interest1'];
-                        $interest2 = $monthly_interest['interest2'];
-                        $interest3 = $monthly_interest['interest3'];
-                        $interest4 = $monthly_interest['interest4'];
-                    }
-
-                    $total_interest = $interest1 + $interest2 + $interest3 + $interest4;
-                    $interest_sum = $total_interest+$monthly_interest['capital_received'];
-    
-                    echo "<tr>";
-                    echo "<td>" . htmlspecialchars($monthly_interest['month']) . "</td>";
-                    echo "<td>" . number_format($monthly_interest['capital_received'], 2) . "</td>"; // Placeholder for capital if needed
-                    echo "<td>" . number_format($interest1, 2) . "</td>";
-                    echo "<td>" . number_format($interest2, 2) . "</td>";
-                    echo "<td>" . number_format($interest3, 2) . "</td>";
-                    echo "<td>" . number_format($interest4, 2) . "</td>";
-                    echo "<td>" . number_format($interest_sum, 2) . "</td>";
-                    echo "<td>" . number_format($total_interest, 2) . "</td>";
-                    echo "</tr>";
-                }
-            }
-        ?>
-    </table>
+</div>
 </body>
 </html>
 
 <?php
+// Close the statement and database connection
+$stmt->close();
 $conn->close();
 ?>
-
-
