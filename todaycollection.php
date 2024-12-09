@@ -17,21 +17,27 @@ if (isset($_POST['submit'])) {
     $selected_date = $_POST['payment_date'];
 
     // Query to get payments made on the selected date and their borrower names
-    $sql = "SELECT payments.rental_amount, payments.payment_date,payments.du_date, borrowers.name,borrowers.total_arrears,borrowers.rental
+    $sql = "SELECT payments.rental_amount, payments.payment_date, payments.du_date, borrowers.name, borrowers.total_arrears, borrowers.rental
             FROM payments
             INNER JOIN borrowers ON payments.borrower_id = borrowers.id
-            WHERE payments.payment_date = '$selected_date'";
-    
+            WHERE payments.payment_date = '$selected_date'
+            AND '$selected_date' BETWEEN borrowers.lone_date AND borrowers.due_date";
     $result = $conn->query($sql);
 
-    // Query to get borrowers who haven't made payments on the selected date (those whose due date is today or in the future)
-    $sq = "SELECT name, rental,total_arrears,total_payments 
+    // Count the total payments
+    $total_payments = $result->num_rows;
+
+    // Query to get borrowers who haven't made payments on the selected date
+    $sq = "SELECT name, rental, total_arrears, total_payments 
            FROM borrowers 
            WHERE id NOT IN (SELECT borrower_id FROM payments WHERE payment_date = '$selected_date')
-           AND due_date >= CURDATE()";
-    $resul = $conn->query($sq); 
+           AND '$selected_date' BETWEEN borrowers.lone_date AND borrowers.due_date";
+    $resul = $conn->query($sq);
 
+    // Count the total borrowers who haven't made payments
+    $total_non_payers = $resul->num_rows;
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -62,6 +68,8 @@ if (isset($_POST['submit'])) {
 
     <!-- Display the results if any -->
     <?php
+   
+
     $row_number = 1;
     // Show payments made on the selected date
     if (isset($result) && $result->num_rows > 0) {
@@ -90,7 +98,7 @@ if (isset($_POST['submit'])) {
         }
         echo "</table>";
     } else {
-        echo "<p>No payments found for the selected date.</p>";
+        echo "<h2>No payments found for the selected date.</h2>";
     }
 
     // Show borrowers who have not made payments on the selected date
