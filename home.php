@@ -274,7 +274,7 @@ while($emp_details = $result_monthly_emp_details->fetch_assoc()){
             <nav>
                 <ul>
                     <li><a href="./borrow_add.php">Add Borrower</a></li>
-                    <li><a href="./collect_amount.php">Collect Amount</a></li>
+                    <li><a href="./amount_collect.php">Collect Amount</a></li>
                     <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
                     <li><a href="./monthly_details.php">Monthly Details</a></li>
