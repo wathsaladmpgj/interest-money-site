@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "interest"; // Change this to your database name
+$dbname = "interest"; // Ensure this is your actual database name
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -14,25 +14,34 @@ if ($conn->connect_error) {
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['name'];
-    $nic = $_POST['nic'];
-    $address = $_POST['address'];
+    // Validate form inputs
+    $name = isset($_POST['name']) ? trim($_POST['name']) : '';
+    $nic = isset($_POST['nic']) ? trim($_POST['nic']) : '';
+    $address = isset($_POST['address']) ? trim($_POST['address']) : '';
 
-    $sql = "INSERT INTO borrower_details (name, nic, address) 
-            VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sss", $name, $nic, $address);
+    if (!empty($name) && !empty($nic) && !empty($address)) {
+        $sql = "INSERT INTO borrower_details (name, nic, address) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($sql);
 
-    if ($stmt->execute()) {
-        echo "<script>";
-        echo "alert('Borrower added successfully!');";
-        echo "window.location.href = 'borrow_add.php';"; // Redirect after alert
-        echo "</script>";
+        if ($stmt) {
+            $stmt->bind_param("sss", $name, $nic, $address);
+
+            if ($stmt->execute()) {
+                echo "<script>";
+                echo "alert('Borrower added successfully!');";
+                echo "window.location.href = 'borrow_add.php';"; // Redirect after alert
+                echo "</script>";
+            } else {
+                echo "Error: " . $stmt->error;
+            }
+
+            $stmt->close();
+        } else {
+            echo "Error preparing statement: " . $conn->error;
+        }
     } else {
-        echo "Error: " . $conn->error;
+        echo "Please fill in all required fields.";
     }
-
-    $stmt->close();
 }
 
 $conn->close();

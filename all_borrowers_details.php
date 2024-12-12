@@ -130,7 +130,7 @@ $result = $conn->query($sql);
 
                 echo "<tr class='{$statusClass}'>";
                 echo "<td>{$row_number}</td>";
-                echo "<td><a href='details.php?id=" . $row['id'] . "'>{$row['name']}</a></td>";
+                echo "<td><a href='one_borrower_details.php?id=" . $row['id'] . "'>{$row['name']}</a></td>";
                 echo "<td>{$row['lone_number']}</td>";
                 echo "<td>{$row['lone_date']}</td>";
                 echo "<td>{$row['due_date']}</td>";

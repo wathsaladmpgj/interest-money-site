@@ -225,37 +225,34 @@ function payment_made($date, $paid_dates) {
             ?>
             </td>
 
-            <!-- Balance, Capital, Interest calculations here -->
-            <td>
-            <?php
-            // Start with the agreed value as the initial balance
-            static $balance = null;
+<td>
+    <?php
+    // Start with the agreed value as the initial balance
+    static $balance = null;
 
-            // If this is the first due date, initialize the balance to the agreed value
-                if (is_null($balance)) {
-                    $balance = $borrower['agree_value'];
+    // Initialize the balance only once, for the first due date
+    if (is_null($balance)) {
+        $balance = $borrower['agree_value'];
+    }
+
+    // Handle balance updates based on payment status
+    if ($date <= $today) {
+        if (payment_made($date, $paid_dates)) {
+            foreach ($paid_dates as $paid) {
+                if ($paid['du_date'] == $date->format('Y-m-d')) {
+                    $balance -= $paid['rental_amount'];
                 }
+            }
+        }
+        // Display the current balance for past or present dates
+        echo htmlspecialchars($balance);
+    } else {
+        // For future dates, display a placeholder or leave it empty
+        echo '-';
+    }
+    ?>
+</td>
 
-            // Check if payment is made on the current date
-                if (payment_made($date, $paid_dates)) {
-                    foreach ($paid_dates as $paid) {
-                        if ($paid['du_date'] == $date->format('Y-m-d')) {
-                            $balance -= $paid['rental_amount'];
-                        }
-                    }
-                } 
-                elseif ($date <= $today) {
-                // For past due dates where no payment has been made, the balance remains as it is
-                    $balance = $balance;
-                } 
-                else {
-                // For future dates, we don't show the balance yet
-                    $balance = '';
-                }
-
-            // Display the current balance for the given date
-                echo htmlspecialchars($balance);
-            ?>
             </td>
 
             <td>
