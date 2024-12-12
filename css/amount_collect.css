@@ -1,0 +1,183 @@
+/* General Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1{
+    color: #070675;
+}
+/* Form Container Styling */
+.form1 {
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 3rem;
+    max-width: 1500px;
+    display: flex;
+    gap: 2rem;
+    flex-direction: column;
+}
+.enter_field1{
+    display: flex;
+    flex-direction: row;
+    gap: 8rem;
+}
+.entry_left{
+    width: 300px;
+}
+.entry_right{
+    width: 300px;
+}
+.enter_field{
+    display: flex;
+    flex-direction: row;
+    gap: 8rem;
+}
+
+/* Form Elements */
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select {
+    width: 300px;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+input[type="submit"],
+button {
+    background-color: #070675;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 20%;
+}
+
+input[type="submit"]:hover,
+button:hover {
+    background-color: #070675;
+}
+
+button[type="button"] {
+    background-color: #007BFF;
+}
+
+button[type="button"]:hover {
+    background-color: #0056b3;
+}
+/* Adjust the width of the select field */
+.select_id {
+    width: 100%; /* Makes the select field take up the full width of its container */
+    max-width: 300px; /* Optional: Restrict the maximum width */
+    padding: 8px 12px; /* Add padding inside the select field */
+    border: 1px solid #ccc; /* Add a light border around the field */
+    border-radius: 5px; /* Add rounded corners */
+    font-size: 16px; /* Adjust font size */
+    background-color: #f9f9f9; /* Light background color */
+}
+
+/* Optional: Adjust the width of the select field on smaller screens */
+@media screen and (max-width: 600px) {
+    .select_id {
+        width: 100%;
+        max-width: none; /* Remove the max-width on small screens */
+    }
+}
+
+/* Table Styling */
+.form2 {
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 1500px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    max-width: 1400px;
+    margin: 20px auto;
+}
+
+table th,
+table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+table th {
+    background-color: #070675;
+    color: white;
+}
+
+table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Styling for Select2 */
+.select2-container .select2-selection {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+.select2-container .select2-selection__rendered {
+    font-size: 14px;
+    color: #333;
+}
+
+.select2-container .select2-selection__arrow {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.select2-container--default .select2-selection--single {
+    background-color: white;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    padding: 4px 8px;
+    height: 38px;
+}
+
+/* Add hover effect for interactive elements */
+input[type="checkbox"]:hover,
+input[type="text"]:hover,
+input[type="date"]:hover,
+input[type="number"]:hover,
+select:hover {
+    border-color: #070675;
+}
+
+button:hover,
+input[type="submit"]:hover {
+    opacity: 0.9;
+}
