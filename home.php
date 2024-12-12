@@ -71,7 +71,7 @@ if ($borrowers_result->num_rows > 0) {
         $expected_payment_by_today = $days_passed * $bar_rent;
 
         // Calculate arrears
-        $arrears = max($expected_payment_by_today - $total_rental_paid, 0);
+        $arrears = max($expected_payment_by_today -$total_py, 0);
         $total_arrears = round($arrears, 2);
 
         // Update the arrears in the database
@@ -99,9 +99,7 @@ if ($borrowers_result->num_rows > 0) {
         echo "Error updating no_pay in borrowers: " . $conn->error;
     }
     
-} else {
-    echo "No borrowers found.";
-}
+} 
 
 
 
