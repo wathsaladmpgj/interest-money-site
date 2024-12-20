@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "interest"; // Change this to your database name
+$dbname = "interest";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -12,33 +12,41 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $interest1 = $_POST['interestRate1'];
-    $interest2 = $_POST['interestRate2'];
-    $interest3 = $_POST['interestRate3'];
-    $interest4 = $_POST['interestRate4'];
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $interest1 = $_POST['interest1'];
+    $interest2 = $_POST['interest2'];
+    $interest3 = $_POST['interest3'];
+    $interest4 = $_POST['interest4'];
+    $updated_month = $_POST['updated_month'];
 
-    $sql = "UPDATE interestrate SET interest1 = ?, interest2 = ?, interest3 = ?, interest4 = ? WHERE id = 1";
+    // Find the latest record and set its end_month to one month before the new updated_month
+    $previous_record_query = "SELECT id, updated_month FROM interestrate ORDER BY updated_month DESC LIMIT 1";
+    $result = $conn->query($previous_record_query);
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("dddd", $interest1, $interest2, $interest3, $interest4);
+    if ($result->num_rows > 0) {
+        $previous_record = $result->fetch_assoc();
+        $previous_id = $previous_record['id'];
+        $previous_updated_month = $previous_record['updated_month'];
 
-    if ($stmt->execute()) {
-        echo "<script>";
-        echo "alert('Interest rates updated successfully!');";
-        echo "window.location.href = 'monthly_details.php';";
-        echo "</script>";
-        // Optionally redirect to avoid resubmission
-        // header("Location: /path/to/your/success/page.php");
-    } else {
-        echo "<script>";
-        echo "alert('Error:');";
-        echo "window.location.href = 'monthly_details.php';";
-        echo "</script>";
+        // Calculate end_month as one month before updated_month
+        $end_month_date = DateTime::createFromFormat('Y/m', $updated_month);
+        $end_month_date->modify('-1 month');
+        $end_month = $end_month_date->format('Y/m');
+
+        // Update the previous record's end_month
+        $update_end_month_query = "UPDATE interestrate SET end_month = '$end_month' WHERE id = $previous_id";
+        $conn->query($update_end_month_query);
     }
 
-    $stmt->close();
-}
+    // Insert the new interest rate record
+    $insert_query = "INSERT INTO interestrate (interest1, interest2, interest3, interest4, updated_month) 
+                     VALUES ($interest1, $interest2, $interest3, $interest4, '$updated_month')";
 
-$conn->close();
+    if ($conn->query($insert_query)) {
+        echo "New interest rates added successfully!";
+    } else {
+        echo "Error: " . $conn->error;
+    }
+}
 ?>

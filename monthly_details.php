@@ -219,19 +219,22 @@ $year_result = $conn->query($year_query);
     <br><br><br>
     <h2 class="from_hed">INTEREST RATE</h2>
     <form action="./interest_rate1.php" method="POST">
-        <label for="interestRate1">Interest 1 (%)</label>
-        <input type="number" id="interestRate1" name="interestRate1" min="0" max="100" step="0.01" required><br><br>
+        <label for="interest1">Interest 1 (%):</label>
+        <input type="number" name="interest1" id="interest1" step="0.01" required><br><br>
 
-        <label for="interestRate2">Interest 2 (%)</label>
-        <input type="number" id="interestRate2" name="interestRate2" min="0" max="100" step="0.01" required><br><br>
+        <label for="interest2">Interest 2 (%):</label>
+        <input type="number" name="interest2" id="interest2" step="0.01" required><br><br>
 
-        <label for="interestRate3">Interest 3 (%)</label>
-        <input type="number" id="interestRate3" name="interestRate3" min="0" max="100" step="0.01" required><br><br>
+        <label for="interest3">Interest 3 (%):</label>
+        <input type="number" name="interest3" id="interest3" step="0.01" required><br><br>
 
-        <label for="interestRate4">Interest 4 (%)</label>
-        <input type="number" id="interestRate4" name="interestRate4" min="0" max="100" step="0.01" required><br><br>
+        <label for="interest4">Interest 4 (%):</label>
+        <input type="number" name="interest4" id="interest4" step="0.01" required><br><br>
 
-        <input type="submit" value="Submit">
+        <label for="updated_month">Effective Month (YYYY/MM):</label>
+        <input type="text" name="updated_month" id="updated_month"  required><br><br>
+
+        <button type="submit">Add Interest Rate</button>
     </form>
 
     <!--Interest rate table-->
@@ -270,7 +273,7 @@ $year_result = $conn->query($year_query);
             }
 
             $interest_rate = $result_interest->fetch_assoc();
-            $updated_month = $interest_rate['updated_month'];
+            $updated_month = isset($interest_rate['updated_month']) ? $interest_rate['updated_month'] : null;
             echo "<!-- Debug: Updated Month: $updated_month -->";
 
             // Fetch all monthly data
@@ -278,64 +281,85 @@ $year_result = $conn->query($year_query);
             FROM monthly_details 
             WHERE YEAR(STR_TO_DATE(CONCAT(month, '-01'), '%Y/%M-%d')) = $selected_year 
             ORDER BY STR_TO_DATE(CONCAT(month, '-01'), '%Y/%M-%d') DESC";
-
             $result_monthly = $conn->query($sql_monthly);
 
             if (!$result_monthly) {
                 die("Error in monthly details query: " . $conn->error);
             }
             if ($result_monthly->num_rows > 0) {
-                while ($monthly_interest = $result_monthly->fetch_assoc()) {
-                    // Debugging output for each month's data
-                    echo "<!-- Debug: Processing Month: " . htmlspecialchars($monthly_interest['month']) . " -->";
+                while ($calc_row = $result_monthly->fetch_assoc()) {
+                    $month = $calc_row['month'];
+    
+                    list($year, $monthName) = explode('/', $month);
+                    $monthNumber = date('m', strtotime($monthName)); // 'September' becomes '09'
+            
+                    // Format the month as 'yyyy/mm' (e.g., '2024/09')
+                    $formattedMonth = $year . '/' . $monthNumber;
+                            // Fetch applicable interest rates for the month
+                            $rate_query = "SELECT * 
+                                FROM interestrate 
+                                WHERE updated_month <= '$formattedMonth' 
+                                AND (end_month IS NULL OR end_month >= '$formattedMonth') 
+                                ORDER BY updated_month DESC 
+                                LIMIT 1";
+                            $rate_result = $conn->query($rate_query);
+    
+    
+                    if ($rate_result && $rate_result->num_rows > 0) {
+                        $rates = $rate_result->fetch_assoc();
+    
+                    // Ensure interest values are not null, defaulting to 0 if null
+                    $interest1 = isset($calc_row['interest_received']) ? $calc_row['interest_received'] * ($rates['interest1'] / 100) : 0;
+                    $interest2 = isset($calc_row['interest_received']) ? $calc_row['interest_received'] * ($rates['interest2'] / 100) : 0;
+                    $interest3 = isset($calc_row['interest_received']) ? $calc_row['interest_received'] * ($rates['interest3'] / 100) : 0;
+                    $interest4 = isset($calc_row['interest_received']) ? $calc_row['interest_received'] * ($rates['interest4'] / 100) : 0;
+    
+                    // Ensure the capital received is not null
+                    $capital_received = isset($calc_row['capital_received']) ? $calc_row['capital_received'] : 0;
+                    $total_interest = $interest1 + $interest2 + $interest3 + $interest4;
+                    $interest_sum = $total_interest + $capital_received;
 
-                    $monthly_date = DateTime::createFromFormat('Y/F', trim($monthly_interest['month']));
-                    $updated_date = DateTime::createFromFormat('Y/F', trim($updated_month));
-
-                    // Check if the current month is the updated month or a later month
-                    if ($monthly_date >= $updated_date) {
-                        $interest1 = $monthly_interest['interest_received'] * $interest_rate['interest1'] / 100;
-                        $interest2 = $monthly_interest['interest_received'] * $interest_rate['interest2'] / 100;
-                        $interest3 = $monthly_interest['interest_received'] * $interest_rate['interest3'] / 100;
-                        $interest4 = $monthly_interest['interest_received'] * $interest_rate['interest4'] / 100;
-
-                        // Update monthly_details record with these rates
-                        $update_sql = "UPDATE monthly_details SET 
+                    $update_sql = "UPDATE monthly_details SET 
                             interest1 = {$interest1}, 
                             interest2 = {$interest2}, 
                             interest3 = {$interest3}, 
                             interest4 = {$interest4} 
-                            WHERE id = {$monthly_interest['id']}";
-
-                        if (!$conn->query($update_sql)) {
-                            die("Error updating monthly details: " . $conn->error);
-                        }
-
-                        // Debugging output for update success
-                        echo "<!-- Debug: Updated Month: " . htmlspecialchars($monthly_interest['month']) . " -->";
-                    } else {
-                        $interest1 = $monthly_interest['interest1'];
-                        $interest2 = $monthly_interest['interest2'];
-                        $interest3 = $monthly_interest['interest3'];
-                        $interest4 = $monthly_interest['interest4'];
+                            WHERE id = {$calc_row['id']}";
+                    if (!$conn->query($update_sql)) {
+                        die("Error updating monthly details: " . $conn->error);
+                    }else {
+                        $interest1 = $calc_row['interest1'];
+                        $interest2 = $calc_row['interest2'];
+                        $interest3 = $calc_row['interest3'];
+                        $interest4 = $calc_row['interest4'];
+                        
                     }
-
-                    $total_interest = $interest1 + $interest2 + $interest3 + $interest4;
-                    $interest_sum = $total_interest+$monthly_interest['capital_received'];
-    
-                    echo "<tr>";
-                    echo "<td>" . htmlspecialchars($monthly_interest['month']) . "</td>";
-                    echo "<td>" . number_format($monthly_interest['capital_received'], 2) . "</td>"; // Placeholder for capital if needed
-                    echo "<td>" . number_format($interest1, 2) . "</td>";
-                    echo "<td>" . number_format($interest2, 2) . "</td>";
-                    echo "<td>" . number_format($interest3, 2) . "</td>";
-                    echo "<td>" . number_format($interest4, 2) . "</td>";
-                    echo "<td>" . number_format($interest_sum, 2) . "</td>";
-                    echo "<td>" . number_format($total_interest, 2) . "</td>";
-                    echo "</tr>";
-                }
+                
+                // Display fetched interest rates (for demonstration)
+                echo "<tr>";
+                echo "<td>" . htmlspecialchars($month) . "</td>";
+                echo "<td>" . htmlspecialchars( $calc_row['interest_received']) . "</td>";
+                echo "<td>" . ($interest1) . "</td>";
+                echo "<td>" . ($interest2) . "</td>";
+                echo "<td>" . ($interest3) . "</td>";
+                echo "<td>" . ($interest4) . "</td>";
+                echo "<td>" . ($interest_sum) . "</td>";
+                echo "<td>" . ($total_interest) . "</td>";
+                
+                echo "</tr>";
+            } else {
+                echo "<tr>";
+                echo "<tr><td colspan='8'>No interest rates found for $formattedMonth.</td></tr>";
+                echo "</tr>";
             }
-        ?>
+    
+    
+                    
+                }
+            } else {
+                echo "<tr><td colspan='5'>No calculation data found.</td></tr>";
+            }
+            ?>
     </table>
 </body>
 </html>
