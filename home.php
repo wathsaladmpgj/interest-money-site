@@ -273,7 +273,8 @@ while($emp_details = $result_monthly_emp_details->fetch_assoc()){
                 <ul>
                     <li><a href="./borrow_add.php">Add Borrower</a></li>
                     <li><a href="./amount_collect.php">Collect Amount</a></li>
-                    <li><a href="./all_borrowers_details.php">Borrowers Details</a></li>
+                    <li><a href="./borrowers_details.php">Borrower Details</a></li>
+                    <li><a href="./all_borrowers_details.php">Loan Details</a></li>
                     <li><a href="./todaycollection.php">Today's Collection</a></li>
                     <li><a href="./monthly_details.php">Monthly Details</a></li>
                     <li><a href="./loan_payment_summary.php">Summary</a></li>
@@ -303,7 +304,7 @@ while($emp_details = $result_monthly_emp_details->fetch_assoc()){
                 </div>    
             </div>
             
-            <!--Create chart-->
+            <!------------------Create chart--------------------------------------------------------------->
 
             <div style="width: 75%; margin:auto ;">
                 <h2 style="text-align: center; font-family: Arial, sans-serif;">Capital Saving, New Loan, and Stocks Over Time</h2>
@@ -507,7 +508,7 @@ while($emp_details = $result_monthly_emp_details->fetch_assoc()){
                 //setInterval(updateChart, 5000);
             </script>
 
-            <!--Percentage chart-->
+            <!--Percentage chart----------->
             
             <h2 style="text-align: center; font-family: Arial, sans-serif;">Stock Increase Percentage</h2>
             <div style="width: 75%;height:350px; margin: auto;">
@@ -590,7 +591,7 @@ while($emp_details = $result_monthly_emp_details->fetch_assoc()){
  
         </div>
 
-        <!-- Dashboard details -->
+        <!----------------------------------------- Dashboard details -------------------------------------------->
         <div class="rg-temp">
             <h3>Number of Customer: <?php echo number_format($total_loan); ?></h3>
             <h3>Number of Loans: <?php echo number_format($total_customer); ?></h3>
@@ -616,7 +617,6 @@ while($emp_details = $result_monthly_emp_details->fetch_assoc()){
             <h3>FutureSalary:&nbsp; Rs. <?php echo number_format($all_salary-$all_payed_salary, 2); ?></h3>
             <h3>Future Allowance:&nbsp; Rs. <?php echo number_format($all_allowance-$all_payed_allowance, 2); ?></h3>
             <h3>Future Privision:&nbsp; Rs. <?php echo number_format($all_privision-$all_payed_privision, 2); ?></h3>
-            <h3>Payed Profit:&nbsp; Rs. <?php echo number_format($dyInterest-$all_salary-$all_allowance-$all_privision, 2); ?></h3>
             <hr>
         </div>
 

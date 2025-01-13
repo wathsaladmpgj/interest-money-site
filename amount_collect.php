@@ -24,7 +24,9 @@ if ($result = $conn->query("SELECT id, name FROM borrower_details")) {
 // Handle AJAX request for loan numbers
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['borrower_id'])) {
     $borrower_id = $_POST['borrower_id'];
-    $stmt = $conn->prepare("SELECT id, lone_number FROM borrowers WHERE borrower_details_id = ?");
+    $stmt = $conn->prepare("SELECT id, lone_number, status 
+                        FROM borrowers 
+                        WHERE borrower_details_id = ? AND status IN ('con', 'no')");
     $stmt->bind_param('i', $borrower_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -136,28 +138,30 @@ $conn->close();
 <h1>Collect Sum Amount</h1>
 <form method="POST" action="./collect_amount1.php" class="form2">
         <table border="1">
-        <thead>
             <tr>
+                <th>No</th>
                 <th>Select</th>
                 <th>Name</th>
                 <th>Loan Number</th>
                 <th>Due Date</th>
                 <th>Rental</th>
             </tr>
-        </thead>
-       
-            <?php while ($row = $result_collect->fetch_assoc()) { ?>
-            <tbody>
-                <tr>
-                    <td><input type="checkbox" name="borrower_ids[]" value="<?php echo $row['id']; ?>"></td>
-                    <td><?php echo $row['name']; ?></td>
-                    <td><?php echo $row['lone_number']; ?></td>
-                    <td><?php echo $row['due_date']; ?></td>
-                    <td><?php echo $row['rental']; ?></td>
-                </tr>
-            </tbody>
-            <?php } ?>
+            <?php 
+                $row_number = 1; // Initialize the row number
+                while ($row = $result_collect->fetch_assoc()) { ?>
+            <tr>
+                <td><?php echo $row_number; ?></td> <!-- Display the row number -->
+                <td><input type="checkbox" name="borrower_ids[]" value="<?php echo $row['id']; ?>"></td>
+                <td><?php echo $row['name']; ?></td>
+                <td><?php echo $row['lone_number']; ?></td>
+                <td><?php echo $row['due_date']; ?></td>
+                <td><?php echo $row['rental']; ?></td>
+            </tr>
+            <?php 
+            $row_number++; // Increment the row number
+            } ?>
         </table>
+
         <br>
         <button type="submit">Enter Payments</button>
     </form>

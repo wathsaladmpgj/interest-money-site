@@ -13,6 +13,46 @@ body {
     line-height: 1.6;
     padding: 20px;
 }
+/*main details------------*/
+.main-details {
+    padding: 20px;
+    max-width: 700px;
+    max-height: 800px;
+    margin-left: 6px;
+    margin-right: 5px;
+    font-family: Arial, sans-serif;
+    margin-bottom: 3rem;
+}
+
+.main-details p {
+    display: inline-block;
+    width: 48%;
+    margin: 4px 0;
+    color: #333;
+    font-size: 20px;
+}
+
+.main-details p strong {
+    font-weight: normal;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+/* Every two paragraphs */
+.main-details p:nth-child(odd) {
+    float: left;
+}
+
+.main-details p:nth-child(even) {
+    float: right;
+}
+
+/* Clear float after every two items */
+.main-details p:nth-child(2n):after {
+    content: "";
+    display: block;
+    clear: both;
+}
 
 /* Container Styling */
 .container {
@@ -33,6 +73,7 @@ h1 {
 }
 
 h2 {
+    margin-top: 10rem;
     font-size: 1.5em;
     margin-bottom: 15px;
     color: #333;

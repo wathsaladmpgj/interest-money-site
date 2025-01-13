@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $mail->setFrom('janijaniwathsala@gmail.com', 'MASTER PC');
             $mail->addAddress($email);
 
-            $verification_url = "https://yourwebsite.com/verify.php?code=$verification_code";
+            $verification_url = "https://chatgpt.com/?code=$verification_code";
             $mail->isHTML(true);
             $mail->Subject = 'Email Verification';
             $mail->Body = "Click <a href='$verification_url'>here</a> to verify your email.";

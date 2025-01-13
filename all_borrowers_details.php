@@ -113,7 +113,6 @@ $result = $conn->query($sql);
             <th>Agree Value</th>
             <th>No Rent</th>
             <th>Due Rent</th>
-            <th>Arrears Rent</th>
             <th>Total Payment</th>
             <th>Arrears</th>
         </tr>
@@ -130,7 +129,7 @@ $result = $conn->query($sql);
 
                 echo "<tr class='{$statusClass}'>";
                 echo "<td>{$row_number}</td>";
-                echo "<td><a href='one_borrower_details.php?id=" . $row['id'] . "'>{$row['name']}</a></td>";
+                echo "<td><a href='details.php?id=" . $row['id'] . "'>{$row['name']}</a></td>";
                 echo "<td>{$row['lone_number']}</td>";
                 echo "<td>{$row['lone_date']}</td>";
                 echo "<td>{$row['due_date']}</td>";
@@ -139,7 +138,6 @@ $result = $conn->query($sql);
                 echo "<td>{$row['agree_value']}</td>";
                 echo "<td>{$row['no_rental']}</td>";
                 echo "<td>{$due_rent}</td>";
-                echo "<td>{$arrears_rent}</td>";
                 echo "<td>{$row['total_payments']}</td>";
                 echo "<td>{$row['total_arrears']}</td>";
                 echo "</tr>";

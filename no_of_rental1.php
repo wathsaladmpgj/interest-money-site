@@ -28,7 +28,7 @@ $rental_query = "UPDATE borrowers b
     SET b.no_pay = IFNULL(p.no_pay, 0)
 ";
 
-if (!mysqli_query($conn, $query)) {
+if (!mysqli_query($conn, $rental_query)) {
     die("Update failed: " . mysqli_error($conn));
 }
 ?>

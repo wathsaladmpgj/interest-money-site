@@ -111,21 +111,21 @@ function payment_made($date, $paid_dates) {
 </head>
 <body id="body">
     <h1>Details for <?php echo htmlspecialchars($borrower['name']); ?></h1>
-    <p><strong>Loan Amount:</strong> Rs.<?php echo htmlspecialchars($borrower['amount']); ?></p>
-    <p><strong>Rental:</strong> <?php echo htmlspecialchars($borrower['rental']); ?></p>
-    <p><strong>Agreed Value:</strong> Rs.<?php echo htmlspecialchars($borrower['agree_value']); ?></p>
-    <p><strong>Interest:</strong> Rs.<?php echo htmlspecialchars($borrower['interest']); ?></p>
-    <p><strong>Interest for Day:</strong> Rs.<?php echo htmlspecialchars($borrower['interest_day']); ?></p>
-    <p><strong>Loan Date:</strong> <?php echo htmlspecialchars($borrower['lone_date']); ?></p>
-    <p><strong>No of Rentals:</strong> <?php echo htmlspecialchars($borrower['no_rental']); ?></p>
-    <p><strong>Due Date:</strong> <?php echo htmlspecialchars($borrower['due_date']); ?></p>
-    <p><strong>Total Payment:</strong>Rs.<?php echo number_format($total_py, 2); ?></p>
-    <p><strong>Arrears:</strong> Rs.<?php echo number_format($borrower['total_arrears'], 2); ?></p>
-    <p><strong>Closing Date:</strong><!-- Closing date if applicable --></p>
+    <div class="main-details">
+        <p><strong>Loan Amount:</strong> Rs.<?php echo htmlspecialchars($borrower['amount']); ?></p>
+        <p><strong>Rental:</strong> <?php echo htmlspecialchars($borrower['rental']); ?></p>
+        <p><strong>Agreed Value:</strong> Rs.<?php echo htmlspecialchars($borrower['agree_value']); ?></p>
+        <p><strong>Interest:</strong> Rs.<?php echo htmlspecialchars($borrower['interest']); ?></p>
+        <p><strong>Interest for Day:</strong> Rs.<?php echo htmlspecialchars($borrower['interest_day']); ?></p>
+        <p><strong>Loan Date:</strong> <?php echo htmlspecialchars($borrower['lone_date']); ?></p>
+        <p><strong>No of Rentals:</strong> <?php echo htmlspecialchars($borrower['no_rental']); ?></p>
+        <p><strong>Due Date:</strong> <?php echo htmlspecialchars($borrower['due_date']); ?></p>
+        <p><strong>Total Payment:</strong>Rs.<?php echo number_format($total_py, 2); ?></p>
+        <p><strong>Arrears:</strong> Rs.<?php echo number_format($borrower['total_arrears'], 2); ?></p>
+        <p><strong>Closing Date:</strong><!-- Closing date if applicable --></p>
+    </div><br>
 
-   
-
-    <h2>Payment Calendar from Day After Loan Date to Due Date</h2>
+    <h2><br>Payment Calendar from Day After Loan Date to Due Date</h2>
 
     <table>
         <tr>
@@ -204,38 +204,39 @@ function payment_made($date, $paid_dates) {
                 echo htmlspecialchars($rental);
             ?>
             </td>
-            <!--payment coloum-->
-            <td>
-            <?php
-               $payment = '';
-                if (payment_made($date, $paid_dates)) {
-                    foreach ($paid_dates as $paid) {
-                        if ($paid['du_date'] == $date->format('Y-m-d')) {
-                            $payment = $paid['rental_amount'];
-                        }
-                    }
-                } 
-                elseif ($date <= $today) {
-                    $payment = '0.00';
-                } 
-                else {
-                    $payment = '';
-                }
-                echo htmlspecialchars($payment);
-            ?>
-            </td>
 
+
+            <!--Payment Column---------------------->
 <td>
     <?php
-    // Start with the agreed value as the initial balance
+        $payment = ''; // Default value for future dates
+        if ($date <= $today) { // Only process for past or current dates
+            $payment = 0; // Initialize total payment to 0
+            if (payment_made($date, $paid_dates)) {
+                foreach ($paid_dates as $paid) {
+                    if ($paid['du_date'] == $date->format('Y-m-d')) {
+                        $payment += $paid['rental_amount']; // Add rental amount to the total payment
+                    }
+                }
+            } else {
+                $payment = '0.00'; // No payment made yet
+            }
+        } 
+        echo htmlspecialchars($payment === '' ? $payment : round($payment, 2)); // Display blank for future dates
+    ?>
+</td>
+
+
+
+            <!--Balance coloum----------->
+<td>
+    <?php
     static $balance = null;
 
     // Initialize the balance only once, for the first due date
     if (is_null($balance)) {
         $balance = $borrower['agree_value'];
     }
-
-    // Handle balance updates based on payment status
     if ($date <= $today) {
         if (payment_made($date, $paid_dates)) {
             foreach ($paid_dates as $paid) {
@@ -244,68 +245,61 @@ function payment_made($date, $paid_dates) {
                 }
             }
         }
-        // Display the current balance for past or present dates
         echo htmlspecialchars($balance);
     } else {
-        // For future dates, display a placeholder or leave it empty
         echo '-';
     }
     ?>
 </td>
 
-            </td>
-
-            <td>
-            <?php
-                $capital_C = '';
-                if (payment_made($date, $paid_dates)) {
-                    foreach ($paid_dates as $paid) {
-                        if ($paid['du_date'] == $date->format('Y-m-d')) {
-                            if($dy_interest<=$paid['rental_amount']){
-                                $capital_C = round($paid['rental_amount']-$dy_interest,2);
-                            }else{
-                                $capital_C = 0;
-                            }
-                            break;
-                        }
+          
+<!--Capital coloum---------------------->
+<td>
+    <?php
+        $capital_C = 0; // Initialize total capital to 0
+        if (payment_made($date, $paid_dates)) {
+            foreach ($paid_dates as $paid) {
+                if ($paid['du_date'] == $date->format('Y-m-d')) {
+                    if ($dy_interest <= $paid['rental_amount']) {
+                        $capital_C += round($paid['rental_amount'] - $dy_interest, 2);
                     }
-                } 
-                elseif ($date <= $today) {
-                    $capital_C = '0.00';
-                } 
-                else {
-                    $capital_C = '';
                 }
-                echo htmlspecialchars($capital_C);
-            ?>
-            </td>
+            }
+        } elseif ($date <= $today) {
+            $capital_C = '0.00'; // No payment made yet
+        } else {
+            $capital_C = ''; // Future dates
+        }
+        echo htmlspecialchars($capital_C);
+    ?>
+</td>
 
-            <!--Interest for DAY-->
-            <td>
-            <?php
-                $interest = '';
-                if (payment_made($date, $paid_dates)) {
-                    foreach ($paid_dates as $paid){
-                    if ($paid['du_date'] == $date->format('Y-m-d')) {
-                        if($dy_interest<=$paid['rental_amount']){
-                            $interest = round($dy_interest,2);
-                        }else{
-                            $interest = round($paid['rental_amount'],2);
-                        }
-                        break;
+
+            <!--Interest for DAY---------------------->
+<td>
+    <?php
+        $interest = 0; // Initialize total interest to 0
+        if (payment_made($date, $paid_dates)) {
+            foreach ($paid_dates as $paid) {
+                if ($paid['du_date'] == $date->format('Y-m-d')) {
+                    if ($dy_interest <= $paid['rental_amount']) {
+                        $interest += round($dy_interest, 2); // Add daily interest
+                    } else {
+                        $interest += round($paid['rental_amount'], 2); // Add entire payment amount as interest
                     }
-                    }
-                } 
-                elseif ($date <= $today) {
-                    $interest = '0.00';
-                } 
-                else {
-                    $interest = '';
                 }
-                echo htmlspecialchars($interest);
-            ?>
-            </td>
+            }
+        } elseif ($date <= $today) {
+            $interest = '0.00'; // No payment made yet
+        } else {
+            $interest = ''; // Future dates
+        }
+        echo htmlspecialchars($interest);
+    ?>
+</td>
 
+
+<!---Arrears per day-------------------->
             <td>
             <?php
                 $arrears_per_day = '';
@@ -317,7 +311,7 @@ function payment_made($date, $paid_dates) {
                     if (payment_made($date, $paid_dates)) {
                         foreach ($paid_dates as $paid) {
                             if ($paid['du_date'] == $date->format('Y-m-d')) {
-                                $arrears_per_day = $expected_payment - $paid['rental_amount'];
+                                $arrears_per_day = $expected_payment - $payment;
                                 break;
                             }
                         }
@@ -333,6 +327,8 @@ function payment_made($date, $paid_dates) {
             ?>
             </td>
 
+
+<!--------------------------Total Arrears--->
             <td>
             <?php
                 static $total_arrears = 0; // Initialize static variable to keep running total of arrears
