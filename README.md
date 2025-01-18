@@ -28,6 +28,8 @@ A web application designed to efficiently manage borrower and employee details, 
     + Auto calculate and disply details of CURRENT STOCK,FUTURE CAPITAL,FUTURE INTEREST,TOTAL ARIARS, Number of Customer,Number of Loans,Total AgreeValue,Total Investment,Total Interest,Total Collection,Collect capital,Collect Interest,All Salary,All Allowance,All Privision,All Profit,Payed Salary,Payed Allowance,Payed Privision,Payed Profit,Profit,FutureSalary,Future Allowance,Future Privision .
     + Display chart of Capital Saving, New Loan, and Stocks Over Time,Collection,Income,Stock Increase Percentage.
 
+![Image](https://github.com/user-attachments/assets/dc63ca01-6ab3-4aac-8aec-8d353c93ed79)
+
 + Add borrower page
     + Add new borrower(Rnter name, Nic and Address) and add new loan(Select borrower name,Enter loan amount,Enter Interest rate,Enter loan date,Number of rental) for borrowers.
 
