@@ -43,9 +43,27 @@ A web application designed to efficiently manage borrower and employee details, 
     + Display total loan amount all borrowers
     + A table with data related to coloumns No,Name,NIC,Address,LoanCount,Total Loan Amount,Loan Settled,Loan in Arrears,Current Loan Balance is displayed
   
-+ Loan details
++ Loan details page
     + Settled Loan,Arrears Loan,Active Loan will display the total of each loan.
     +  A table with data related to coloumns No,Name,No,Loan Date,Due Date,Rental,Loan Amount,Agree Value,No Rent,Due Rent,Total Payment,Arrears is displayed
     +  You can downlode a pdf containing a table related to that data
     +  In this table, settled loan is displayed in yellow color, arrears loan is displayed in brown color, and active loan is displayed in white color.
+
++ Todays's collection page
+    + When the date is selected, the borrowers who have to pay and have to pay related to that date will be displayed in a table.
+      ![Image](https://github.com/user-attachments/assets/789ad0b1-1519-44e4-8180-49ed63b23c4f)
+      
++ Monthly details
+    + When the year is selected, the monthly payment details related to that year will be displayed. Here, in each month, the amount paid, the total amount to be received in that month, how much should be received from the capital, how much should be received from the interest, the total amount paid by the borrowers in that month, the amount related to the capita from the amount received, the interest from the amount received How much and arrears will be displayed in a table.
+      ![Image](https://github.com/user-attachments/assets/ae9b7210-f157-435c-9c36-2ef0a608a7ae)
+
+    + Also, the interest received in each month related to the selected year (Allowance, Privision, Salary, Profit) is calculated and displayed in a table. Here we can change the interest rate when needed and each interest is calculated according to the changed rate. Here, the interest rate we enter is valid only from the month of entry to the following months and the interest of the previous months is determined based on the previously entered interest rate values.
+      ![Image](https://github.com/user-attachments/assets/f7b5032e-8680-4734-80b2-524a053d46ec)
+
+
+
+
+
+
+
  
