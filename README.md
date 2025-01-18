@@ -39,7 +39,7 @@ A web application designed to efficiently manage borrower and employee details, 
     + Disply to select the numbers related to the loan to be paid when selecting the borrower.
     + When your enter thr due date, payment date and payment amount for the selected loan, the payment will be added.
     + If necessary here, if the people who have to make payments related to today have paid, select them and click on the enter payment button, then the corresponding payment will be added to them.
-      ![Image](https://github.com/user-attachments/assets/a252860c-474d-408c-9f47-a1d7dea0b5bd)
+     ![Image](https://github.com/user-attachments/assets/217cbcac-3628-4a63-bfd5-afa2256950b5)
  
 + Borrower Details page
     + Display total loan amount all borrowers
